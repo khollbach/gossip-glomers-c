@@ -22,6 +22,9 @@
 *.la
 *.lo
 
+# clangd
+compile_flags.txt
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
