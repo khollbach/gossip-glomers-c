@@ -13,3 +13,6 @@ build:
 run:
 	docker run --rm -it -v $(PWD):/app gcc
 
+.PHONY: clean
+clean:
+	rm -f *.out
