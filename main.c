@@ -22,11 +22,8 @@ int main()
         json_object* init_msg_reply = init_reply(init_msg);
         printf("%s\n", json_object_to_json_string(init_msg_reply));
         fflush(stdout);
-        // ISSUE: Memory leak, but calling json_object_put causes SIGABRT
-        // main.out: ./json_object.c:273: json_object_put: Assertion
-        // `jso->_ref_count > 0' failed.
-        /* json_object_put(init_msg); */
         json_object_put(init_msg_reply);
+        json_object_put(init_msg);
     }
 
     while ((input_bytes_read = getline(&input_line, &input_len, stdin)) != -1)
@@ -35,11 +32,8 @@ int main()
         json_object* echo_msg_reply = echo_reply(echo_msg);
         printf("%s\n", json_object_to_json_string(echo_msg_reply));
         fflush(stdout);
-        // ISSUE: Memory leak, but calling json_object_put causes SIGABRT
-        // main.out: ./json_object.c:273: json_object_put: Assertion
-        // `jso->_ref_count > 0' failed.
-        /* json_object_put(echo_msg); */
         json_object_put(echo_msg_reply);
+        json_object_put(echo_msg);
     }
 
     free(input_line);
@@ -47,12 +41,14 @@ int main()
 
 json_object* init_reply(json_object* init_msg)
 {
-    // Create `msg_id`, `dest`, `src`, `in_reply_to` fields
-    json_object* reply_msg_id = json_object_new_int64(REPLY_MSG_ID++);
+    // Access `dest`, `src`, `in_reply_to` fields
     json_object* reply_dest = json_object_object_get(init_msg, "src");
     json_object* reply_src = json_object_object_get(init_msg, "dest");
     json_object* reply_in_reply_to = json_object_object_get(
         json_object_object_get(init_msg, "body"), "msg_id");
+
+    // Create `msg_id` field
+    json_object* reply_msg_id = json_object_new_int64(REPLY_MSG_ID++);
 
     // Create `reply` and add dest`, `src` fields
     json_object* reply = json_object_new_object();
@@ -69,21 +65,26 @@ json_object* init_reply(json_object* init_msg)
     // Add `body` to `reply` object
     json_object_object_add(reply, "body", reply_body);
 
+    // Retain objects before returning them
+    json_object_get(reply_src);
+    json_object_get(reply_dest);
+    json_object_get(reply_in_reply_to);
+
     return reply;
 }
 
 json_object* echo_reply(json_object* echo_msg)
 {
-    // Create `msg_id`, `dest`, `src`, `in_reply_to` fields
-    json_object* reply_msg_id = json_object_new_int64(REPLY_MSG_ID++);
+    // Access `dest`, `src`, `in_reply_to`, `echo` fields
     json_object* reply_dest = json_object_object_get(echo_msg, "src");
     json_object* reply_src = json_object_object_get(echo_msg, "dest");
     json_object* reply_in_reply_to = json_object_object_get(
         json_object_object_get(echo_msg, "body"), "msg_id");
-
-    // Extract `echo` field
     json_object* reply_echo = json_object_object_get(
         json_object_object_get(echo_msg, "body"), "echo");
+
+    // Create `msg_id` field
+    json_object* reply_msg_id = json_object_new_int64(REPLY_MSG_ID++);
 
     // Create `reply` and add dest`, `src` fields
     json_object* reply = json_object_new_object();
@@ -102,6 +103,12 @@ json_object* echo_reply(json_object* echo_msg)
 
     // Add `body` to `reply` object
     json_object_object_add(reply, "body", reply_body);
+
+    // Retain objects before returning them
+    json_object_get(reply_src);
+    json_object_get(reply_dest);
+    json_object_get(reply_in_reply_to);
+    json_object_get(reply_echo);
 
     return reply;
 }
