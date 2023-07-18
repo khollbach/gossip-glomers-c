@@ -7,11 +7,11 @@ main.out: main.c
 
 .PHONY: build
 build:
-	docker build -t gcc .
+	docker build -t ggc .
 
 .PHONY: run
 run:
-	docker run --rm -it -v $(PWD):/app gcc
+	docker run --rm -it -v $(PWD):/app ggc
 
 .PHONY: clean
 clean:
