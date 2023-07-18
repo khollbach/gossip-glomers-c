@@ -1,9 +1,11 @@
-CFLAGS += $(shell pkg-config --cflags json-c)
 CFLAGS += -Wall -Wextra -Wpedantic
-LDFLAGS += $(shell pkg-config --libs json-c)
+LDFLAGS += $(shell pkg-config --libs --cflags json-c)
 
 main.out: main.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+debug.out: main.c
+	$(CC) -g -O0 -o $@ $^ $(LDFLAGS)
 
 .PHONY: build
 build:
