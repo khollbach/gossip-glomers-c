@@ -27,7 +27,7 @@ int main()
         json_object_put(init_msg_reply);
     }
 
-    while ((input_bytes_read = getline(&input_line, &input_len, stdin)) != 1)
+    while ((input_bytes_read = getline(&input_line, &input_len, stdin)) != -1)
     {
         json_object* echo_msg = json_tokener_parse(input_line);
         json_object* echo_msg_reply = echo_reply(echo_msg);
@@ -36,6 +36,7 @@ int main()
         json_object_put(echo_msg);
         json_object_put(echo_msg_reply);
     }
+
     free(input_line);
 }
 
