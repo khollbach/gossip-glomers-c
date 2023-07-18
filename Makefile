@@ -5,7 +5,7 @@ main.out: main.c
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 debug.out: main.c
-	$(CC) -g -O0 -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -g -O0 -o $@ $^ $(LDFLAGS)
 
 .PHONY: build
 build:
