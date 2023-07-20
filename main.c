@@ -38,13 +38,9 @@ int main()
         printf("%s\n", json_object_to_json_string(init_msg_reply));
         fflush(stdout);
 
-        // ISSUE: Why does this cause a segfault?
-        /*
-        printf(
-            "init_msg_reply:reply_dest _ref_count after print to STDOUT: "
-            "%u\n",
-            json_object_object_get(init_msg_reply, "reply_dest")->_ref_count);
-        */
+        printf("init_msg_reply:dest _ref_count after print to STDOUT: "
+               "%u\n",
+               json_object_object_get(init_msg_reply, "dest")->_ref_count);
 
         printf("init_msg:src _ref_count BEFORE init_msg_reply "
                "_put calls: %u\n",
