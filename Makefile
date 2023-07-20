@@ -2,12 +2,19 @@ CFLAGS += $(shell pkg-config --cflags json-c)
 CFLAGS += -Wall -Wextra -Wpedantic
 LDFLAGS += $(shell pkg-config --libs json-c)
 
-main.out: main.c
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+build/challenge-1.out: build/challenge-1.o build/util.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+build/challenge-1.o: src/challenge-1/main.c lib/util.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/util.o: lib/util.c lib/util.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: build
 build:
 	docker build -t ggc .
+	mkdir -p build/
 
 .PHONY: run
 run:
@@ -15,4 +22,4 @@ run:
 
 .PHONY: clean
 clean:
-	rm -f *.out
+	rm -rf build/*
