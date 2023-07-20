@@ -1,3 +1,5 @@
+#include <json-c/json_object.h>
+#include <json-c/json_types.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,76 +41,58 @@ int main()
     free(input_line);
 }
 
-json_object* init_reply(json_object* init_msg)
+json_object* generic_reply(json_object* msg, uint64_t* next_msg_id)
 {
-    // Access `dest`, `src`, `in_reply_to` fields
-    json_object* reply_dest = json_object_object_get(init_msg, "src");
-    json_object* reply_src = json_object_object_get(init_msg, "dest");
-    json_object* reply_in_reply_to = json_object_object_get(
-        json_object_object_get(init_msg, "body"), "msg_id");
-
-    // Create `msg_id` field
-    json_object* reply_msg_id = json_object_new_int64(REPLY_MSG_ID++);
-
-    // Create `reply` and add dest`, `src` fields
     json_object* reply = json_object_new_object();
-    json_object_object_add(reply, "src", reply_src);
-    json_object_object_add(reply, "dest", reply_dest);
 
-    // Create `body` field
     json_object* reply_body = json_object_new_object();
-    json_object_object_add(reply_body, "type",
-                           json_object_new_string("init_ok"));
-    json_object_object_add(reply_body, "msg_id", reply_msg_id);
-    json_object_object_add(reply_body, "in_reply_to", reply_in_reply_to);
-
-    // Add `body` to `reply` object
     json_object_object_add(reply, "body", reply_body);
 
-    // Retain objects before returning them
-    json_object_get(reply_src);
+    // Grab shared objects, incr refcounts.
+
+    json_object* reply_dest = json_object_object_get(msg, "src");
     json_object_get(reply_dest);
+    json_object_object_add(reply, "dest", reply_dest);
+
+    json_object* reply_src = json_object_object_get(msg, "dest");
+    json_object_get(reply_src);
+    json_object_object_add(reply, "src", reply_src);
+
+    json_object* reply_in_reply_to = json_object_object_get(json_object_object_get(msg, "body"), "msg_id");
     json_object_get(reply_in_reply_to);
+    json_object_object_add(reply_body, "in_reply_to", reply_in_reply_to);
+
+    // Generate reply type: "XXX_ok"
+    json_object* type = json_object_object_get(json_object_object_get(msg, "body"), "type");
+    const char *name = json_object_get_string(type);
+    size_t n = strlen(name);
+    char new_name[n + 4]; // +4 for "_ok" and null terminator.
+    strcpy(new_name, name);
+    strcpy(&(new_name[n]), "_ok");
+    json_object* reply_type = json_object_new_string(new_name);
+    json_object_object_add(reply_body, "type", reply_type);
+
+    // Add a unique msg id to the reply.
+    uint64_t msg_id = (*next_msg_id)++;
+    json_object* reply_msg_id = json_object_new_int64(msg_id);
+    json_object_object_add(reply_body, "msg_id", reply_msg_id);
 
     return reply;
 }
 
+json_object* init_reply(json_object* init_msg)
+{
+    return generic_reply(init_msg, &REPLY_MSG_ID);
+}
+
 json_object* echo_reply(json_object* echo_msg)
 {
-    // Access `dest`, `src`, `in_reply_to`, `echo` fields
-    json_object* reply_dest = json_object_object_get(echo_msg, "src");
-    json_object* reply_src = json_object_object_get(echo_msg, "dest");
-    json_object* reply_in_reply_to = json_object_object_get(
-        json_object_object_get(echo_msg, "body"), "msg_id");
-    json_object* reply_echo = json_object_object_get(
-        json_object_object_get(echo_msg, "body"), "echo");
+    json_object* reply = generic_reply(echo_msg, &REPLY_MSG_ID);
 
-    // Create `msg_id` field
-    json_object* reply_msg_id = json_object_new_int64(REPLY_MSG_ID++);
-
-    // Create `reply` and add dest`, `src` fields
-    json_object* reply = json_object_new_object();
-    json_object_object_add(reply, "src", reply_src);
-    json_object_object_add(reply, "dest", reply_dest);
-
-    // Create `body` field
-    json_object* reply_body = json_object_new_object();
-    json_object_object_add(reply_body, "type",
-                           json_object_new_string("echo_ok"));
-    json_object_object_add(reply_body, "msg_id", reply_msg_id);
-    json_object_object_add(reply_body, "in_reply_to", reply_in_reply_to);
-
-    // "Echo" the `echo` field
-    json_object_object_add(reply_body, "echo", reply_echo);
-
-    // Add `body` to `reply` object
-    json_object_object_add(reply, "body", reply_body);
-
-    // Retain objects before returning them
-    json_object_get(reply_src);
-    json_object_get(reply_dest);
-    json_object_get(reply_in_reply_to);
+    // reply.body.echo = echo_msg.body.echo
+    json_object* reply_echo = json_object_object_get(json_object_object_get(echo_msg, "body"), "echo");
     json_object_get(reply_echo);
+    json_object_object_add(json_object_object_get(reply, "body"), "echo", reply_echo);
 
     return reply;
 }
