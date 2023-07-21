@@ -5,15 +5,15 @@ SRC_DIR := src
 BUILD_DIR:= build
 LIB_DIR := lib
 
-# Generate the list of challenge executables
+# Generate challenge executables
 CHALLENGES := challenge-1 challenge-2
 CHALLENGE_EXECS := $(patsubst %, $(BUILD_DIR)/%.out, $(CHALLENGES))
 
-# Generate the list of source files for each challenge
+# Generate source files for each challenge
 CHALLENGE_1_SRC := $(SRC_DIR)/challenge-1/challenge-1.c
 CHALLENGE_2_SRC := $(SRC_DIR)/challenge-2/challenge-2.c
 
-# Generate the list of object files for each challenge
+# Generate object files for each challenge
 CHALLENGE_1_OBJS := $(patsubst $(SRC_DIR)/challenge-1/%.c, $(BUILD_DIR)/%.o, $(CHALLENGE_1_SRC))
 CHALLENGE_2_OBJS := $(patsubst $(SRC_DIR)/challenge-2/%.c, $(BUILD_DIR)/%.o, $(CHALLENGE_2_SRC))
 
@@ -32,7 +32,7 @@ $(BUILD_DIR)/challenge-1.o: $(CHALLENGE_1_SRC) $(LIB_DIR)/util.h
 $(BUILD_DIR)/challenge-2.o: $(CHALLENGE_2_SRC) $(LIB_DIR)/util.h $(LIB_DIR)/collections.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Generate the list of object files for library modules
+# Generate object files for library modules
 $(BUILD_DIR)/util.o: $(LIB_DIR)/util.c $(LIB_DIR)/util.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
