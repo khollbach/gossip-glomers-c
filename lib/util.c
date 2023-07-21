@@ -2,6 +2,45 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
+void msg_send(json_object* msg) {
+    printf("%s\n", json_object_to_json_string(msg));
+    fflush(stdout);
+    json_object_put(msg);
+}
+
+json_object* msg_recv() {
+    char* input_line = NULL;
+    size_t input_len = 0;
+
+    errno = 0;
+    ssize_t input_bytes_read = getline(&input_line, &input_len, stdin);
+    if (input_bytes_read == -1) {
+        // End of stdin; return NULL.
+        if (errno == 0) {
+            free(input_line);
+            return NULL;
+        }
+
+        // IO error.
+        perror("getline");
+        free(input_line);
+        exit(EXIT_FAILURE);
+    }
+
+    json_object* msg = json_tokener_parse(input_line);
+    if (msg == NULL) {
+        fprintf(stderr, "Error: recv_msg: couldn't parse line as json");
+        free(input_line);
+        exit(EXIT_FAILURE);
+    }
+
+    free(input_line);
+    return msg;
+}
 
 uint64_t REPLY_MSG_ID = 0;
 
