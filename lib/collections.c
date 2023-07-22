@@ -3,11 +3,25 @@
 
 #include "collections.h"
 
-bool queue_is_full(Queue* queue) { return queue->length == queue->size; }
+typedef struct Node
+{
+    void* data;
+    struct Node* next;
+} Node;
+
+typedef struct Queue
+{
+    Node* head;
+    Node* tail;
+    size_t length;
+    size_t max_length;
+} Queue;
+
+bool queue_is_full(Queue* queue) { return queue->length == queue->max_length; }
 
 bool queue_is_empty(Queue* queue) { return queue->length == 0; }
 
-Queue* queue_init(size_t size)
+Queue* queue_init(size_t max_length)
 {
     Queue* queue = malloc(sizeof(Queue));
     if (queue == NULL)
@@ -15,7 +29,7 @@ Queue* queue_init(size_t size)
         fprintf(stderr, "Error: queue_init: malloc failed\n");
         exit(EXIT_FAILURE);
     }
-    queue->size = size;
+    queue->max_length = max_length;
     queue->length = 0;
     queue->head = NULL;
     queue->tail = NULL;
