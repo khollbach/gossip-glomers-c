@@ -36,14 +36,34 @@ json_object* init_reply(json_object* init_msg)
 // Used exclusively by Leader
 void conch_request_handler(json_object* conch_request, Queue* request_queue)
 {
+    if (queue_is_full(request_queue))
+    {
+        fprintf(stderr,
+                "Error: conch_request_handler: request queue is full\n");
+        exit(EXIT_FAILURE);
+    }
     json_object* body = json_object_object_get(conch_request, "body");
-    queue_enqueue(request_queue,
-                  json_object_object_get(body, "original_client_request"));
+    json_object* original_client_request =
+        json_object_object_get(body, "original_client_request");
+    queue_enqueue(request_queue, original_client_request);
+    json_object_get(original_client_request);
 }
 
 // Used exclusively by Leader
 void conch_response_dispatcher(Conch* conch, Queue* request_queue)
 {
+    if (!conch_is_available(conch))
+    {
+        fprintf(stderr,
+                "Error: conch_response_dispatcher: conch is not available\n");
+        exit(EXIT_FAILURE);
+    }
+    if (queue_is_empty(request_queue))
+    {
+        fprintf(stderr,
+                "Error: conch_response_dispatcher: request queue is empty\n");
+        exit(EXIT_FAILURE);
+    }
     json_object* conch_response = json_object_new_object();
     json_object* original_client_request = queue_dequeue(request_queue);
 
@@ -61,7 +81,6 @@ void conch_response_dispatcher(Conch* conch, Queue* request_queue)
     int64_t conch_value = conch_checkout(conch);
     json_object_object_add(body, "conch_value",
                            json_object_new_int64(conch_value));
-    json_object_get(original_client_request);
     json_object_object_add(body, "original_client_request",
                            original_client_request);
     json_object_object_add(conch_response, "body", body);
@@ -114,7 +133,7 @@ void conch_response_handler(json_object* conch_response)
         json_object_object_get(conch_response_body, "conch_value");
     json_object_get(conch_value);
     json_object_object_add(json_object_object_get(client_response, "body"),
-                           "conch value", conch_value);
+                           "conch_value", conch_value);
 
     // Send client response message (to client)
     msg_send(client_response);
@@ -134,7 +153,7 @@ void conch_response_handler(json_object* conch_response)
 
     json_object* conch_release_body = json_object_new_object();
     json_object_object_add(conch_release_body, "type",
-                           json_object_new_string("conch_rerelease"));
+                           json_object_new_string("conch_release"));
     json_object_object_add(conch_release_body, "conch_value",
                            json_object_new_int64(new_conch_value));
     json_object_object_add(conch_release, "body", conch_release_body);
