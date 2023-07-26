@@ -47,6 +47,9 @@ void conch_request_handler(json_object* conch_request, Queue* request_queue)
         json_object_object_get(body, "original_client_request");
     queue_enqueue(request_queue, original_client_request);
     json_object_get(original_client_request);
+
+    // Clean up: Free conch request message
+    json_object_put(conch_request);
 }
 
 // Used exclusively by Leader
@@ -96,6 +99,9 @@ void conch_release_handler(json_object* conch_release, Conch* conch)
     int64_t new_conch_value =
         json_object_get_int64(json_object_object_get(body, "conch_value"));
     conch_checkin(conch, new_conch_value);
+
+    // Clean up: free conch release message
+    json_object_put(conch_release);
 }
 
 void client_request_handler(json_object* client_request)
@@ -119,6 +125,9 @@ void client_request_handler(json_object* client_request)
 
     // Send conch request message (to Leader)
     msg_send(conch_request);
+
+    // Clean up: free client request message
+    json_object_put(client_request);
 }
 
 void conch_response_handler(json_object* conch_response)
@@ -160,4 +169,7 @@ void conch_response_handler(json_object* conch_response)
 
     // Send conch release message (to Leader)
     msg_send(conch_release);
+
+    // Clean up: free conch response message
+    json_object_put(conch_response);
 }
