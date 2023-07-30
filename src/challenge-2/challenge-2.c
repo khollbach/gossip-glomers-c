@@ -3,9 +3,16 @@
 #include "json-c/json_object.h"
 #include <json-c/json.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
-char* LEADER_NODE = "n0";
+const char* const LEADER_NODE = "n0";
 
+void follower_event_loop();
+void leader_event_loop();
+const char* node_id(json_object* init_msg);
+const char* msg_type(json_object* msg);
 json_object* init_reply(json_object* init_msg);
 
 void client_request_handler(json_object* client_request);
@@ -22,10 +29,92 @@ int main(void)
         fprintf(stderr, "expected init message, got EOF");
         exit(EXIT_FAILURE);
     }
+    bool is_leader = strcmp(node_id(init_msg), LEADER_NODE) == 0;
     msg_send(init_reply(init_msg));
     json_object_put(init_msg);
 
-    // TODO: Event loops
+    if (is_leader) {
+        leader_event_loop();
+    } else {
+        follower_event_loop();
+    }
+}
+
+void follower_event_loop() {
+    json_object* msg;
+    while ((msg = msg_recv()) != NULL) {
+        const char* type = msg_type(msg);
+
+        if (strcmp(type, "generate") == 0) {
+            client_request_handler(msg);
+        } else if (strcmp(type, "conch_response") == 0) {
+            conch_response_handler(msg);
+        } else {
+            fprintf(stderr, "Error: follower_event_loop: unrecognized message type: \"%s\"", type);
+            free(msg);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+void leader_event_loop() {
+    Queue* queue = queue_init(100);
+    Conch* conch = conch_init(0);
+
+    json_object* msg;
+    while (true) {
+        // Serve conch requests as the conch becomes available.
+        if (!queue_is_empty(queue) && conch_is_available(conch)) {
+            conch_response_dispatcher(conch, queue);
+            continue;
+        }
+
+        if ((msg = msg_recv()) == NULL) {
+            // If the conch is still loaned out, we won't get it back, since stdin is EOF.
+            if (!queue_is_empty(queue)) {
+                assert(!conch_is_available(conch));
+                fprintf(stderr, "Warn: leader_event_loop: shut down with unserved conch requests");
+            }
+            break;
+        }
+
+        // Handle incoming messages.
+        const char* type = msg_type(msg);
+        if (strcmp(type, "generate") == 0) {
+            client_request_handler(msg);
+        } else if (strcmp(type, "conch_response") == 0) {
+            conch_response_handler(msg);
+        } else if (strcmp(type, "conch_request") == 0) {
+            conch_request_handler(msg, queue);
+        } else if (strcmp(type, "conch_release") == 0) {
+            conch_release_handler(msg, conch);
+        } else {
+            fprintf(stderr, "Error: leader_event_loop: unrecognized message type: \"%s\"", type);
+            queue_free(queue);
+            conch_free(conch);
+            free(msg);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    queue_free(queue);
+    conch_free(conch);
+}
+
+// Borrows init_msg.
+// The returned string is borrowed from init_msg; don't use it after freeing init_msg.
+const char* node_id(json_object* init_msg) {
+    json_object* body = json_object_object_get(init_msg, "body");
+    json_object* node_id = json_object_object_get(body, "node_id");
+    return json_object_get_string(node_id);
+}
+
+// Borrows msg.
+// The returned string is borrowed from msg; don't use it after freeing msg.
+const char* msg_type(json_object* msg) {
+    json_object* body = json_object_object_get(msg, "body");
+    json_object* type = json_object_object_get(body, "type");
+    return json_object_get_string(type);
 }
 
 json_object* init_reply(json_object* init_msg)
