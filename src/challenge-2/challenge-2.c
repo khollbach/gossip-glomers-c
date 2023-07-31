@@ -101,22 +101,6 @@ void leader_event_loop() {
     conch_free(conch);
 }
 
-// Borrows init_msg.
-// The returned string is borrowed from init_msg; don't use it after freeing init_msg.
-const char* node_id(json_object* init_msg) {
-    json_object* body = json_object_object_get(init_msg, "body");
-    json_object* node_id = json_object_object_get(body, "node_id");
-    return json_object_get_string(node_id);
-}
-
-// Borrows msg.
-// The returned string is borrowed from msg; don't use it after freeing msg.
-const char* msg_type(json_object* msg) {
-    json_object* body = json_object_object_get(msg, "body");
-    json_object* type = json_object_object_get(body, "type");
-    return json_object_get_string(type);
-}
-
 json_object* init_reply(json_object* init_msg)
 {
     return generic_reply(init_msg);

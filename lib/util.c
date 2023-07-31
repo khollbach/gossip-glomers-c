@@ -82,3 +82,15 @@ json_object* generic_reply(json_object* msg)
 
     return reply;
 }
+
+const char* node_id(json_object* init_msg) {
+    json_object* body = json_object_object_get(init_msg, "body");
+    json_object* node_id = json_object_object_get(body, "node_id");
+    return json_object_get_string(node_id);
+}
+
+const char* msg_type(json_object* msg) {
+    json_object* body = json_object_object_get(msg, "body");
+    json_object* type = json_object_object_get(body, "type");
+    return json_object_get_string(type);
+}
