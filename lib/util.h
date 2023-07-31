@@ -15,3 +15,11 @@ json_object* msg_recv();
 //
 // Merely "borrows" the input object -- ownership stays with the caller.
 json_object* generic_reply(json_object* msg);
+
+// Borrows init_msg.
+// The returned string is borrowed from init_msg; don't use it after freeing init_msg.
+const char* node_id(json_object* init_msg);
+
+// Borrows msg.
+// The returned string is borrowed from msg; don't use it after freeing msg.
+const char* msg_type(json_object* msg);
