@@ -20,10 +20,10 @@ CHALLENGE_2_OBJS := $(patsubst $(SRC_DIR)/challenge-2/%.c, $(BUILD_DIR)/%.o, $(C
 
 all: $(CHALLENGE_EXECS)
 
-$(BUILD_DIR)/challenge-1.out: $(CHALLENGE_1_OBJS) $(LIB_DIR)/util.o
+$(BUILD_DIR)/challenge-1.out: $(CHALLENGE_1_OBJS) $(BUILD_DIR)/util.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
-$(BUILD_DIR)/challenge-2.out: $(CHALLENGE_2_OBJS) $(LIB_DIR)/util.o $(LIB_DIR)/collections.o
+$(BUILD_DIR)/challenge-2.out: $(CHALLENGE_2_OBJS) $(BUILD_DIR)/util.o $(BUILD_DIR)/collections.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 $(BUILD_DIR)/challenge-1.o: $(CHALLENGE_1_SRC) $(LIB_DIR)/util.h

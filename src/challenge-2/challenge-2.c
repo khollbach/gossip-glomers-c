@@ -1,11 +1,11 @@
 #include "../../lib/collections.h"
 #include "../../lib/util.h"
 #include "json-c/json_object.h"
+#include <assert.h>
 #include <json-c/json.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 const char* const LEADER_NODE = "n0";
 
@@ -33,63 +33,95 @@ int main(void)
     msg_send(init_reply(init_msg));
     json_object_put(init_msg);
 
-    if (is_leader) {
+    if (is_leader)
+    {
         leader_event_loop();
-    } else {
+    }
+    else
+    {
         follower_event_loop();
     }
 }
 
-void follower_event_loop() {
+void follower_event_loop()
+{
     json_object* msg;
-    while ((msg = msg_recv()) != NULL) {
+    while ((msg = msg_recv()) != NULL)
+    {
         const char* type = msg_type(msg);
 
-        if (strcmp(type, "generate") == 0) {
+        if (strcmp(type, "generate") == 0)
+        {
             client_request_handler(msg);
-        } else if (strcmp(type, "conch_response") == 0) {
+        }
+        else if (strcmp(type, "conch_response") == 0)
+        {
             conch_response_handler(msg);
-        } else {
-            fprintf(stderr, "Error: follower_event_loop: unrecognized message type: \"%s\"", type);
+        }
+        else
+        {
+            fprintf(
+                stderr,
+                "Error: follower_event_loop: unrecognized message type: \"%s\"",
+                type);
             free(msg);
             exit(EXIT_FAILURE);
         }
     }
 }
 
-void leader_event_loop() {
-    Queue* queue = queue_init(100);
+void leader_event_loop()
+{
+    Queue* queue = queue_init(5);
     Conch* conch = conch_init(0);
 
     json_object* msg;
-    while (true) {
+    while (true)
+    {
         // Serve conch requests as the conch becomes available.
-        if (!queue_is_empty(queue) && conch_is_available(conch)) {
+        if (!queue_is_empty(queue) && conch_is_available(conch))
+        {
             conch_response_dispatcher(conch, queue);
             continue;
         }
 
-        if ((msg = msg_recv()) == NULL) {
-            // If the conch is still loaned out, we won't get it back, since stdin is EOF.
-            if (!queue_is_empty(queue)) {
+        if ((msg = msg_recv()) == NULL)
+        {
+            // If the conch is still loaned out, we won't get it back, since
+            // stdin is EOF.
+            if (!queue_is_empty(queue))
+            {
                 assert(!conch_is_available(conch));
-                fprintf(stderr, "Warn: leader_event_loop: shut down with unserved conch requests");
+                fprintf(stderr, "Warn: leader_event_loop: shut down with "
+                                "unserved conch requests");
             }
             break;
         }
 
         // Handle incoming messages.
         const char* type = msg_type(msg);
-        if (strcmp(type, "generate") == 0) {
+        if (strcmp(type, "generate") == 0)
+        {
             client_request_handler(msg);
-        } else if (strcmp(type, "conch_response") == 0) {
+        }
+        else if (strcmp(type, "conch_response") == 0)
+        {
             conch_response_handler(msg);
-        } else if (strcmp(type, "conch_request") == 0) {
+        }
+        else if (strcmp(type, "conch_request") == 0)
+        {
             conch_request_handler(msg, queue);
-        } else if (strcmp(type, "conch_release") == 0) {
+        }
+        else if (strcmp(type, "conch_release") == 0)
+        {
             conch_release_handler(msg, conch);
-        } else {
-            fprintf(stderr, "Error: leader_event_loop: unrecognized message type: \"%s\"", type);
+        }
+        else
+        {
+            fprintf(
+                stderr,
+                "Error: leader_event_loop: unrecognized message type: \"%s\"",
+                type);
             queue_free(queue);
             conch_free(conch);
             free(msg);
@@ -215,7 +247,7 @@ void conch_response_handler(json_object* conch_response)
         json_object_object_get(conch_response_body, "conch_value");
     json_object_get(conch_value);
     json_object_object_add(json_object_object_get(client_response, "body"),
-                           "conch_value", conch_value);
+                           "id", conch_value);
 
     // Send client response message (to client)
     msg_send(client_response);

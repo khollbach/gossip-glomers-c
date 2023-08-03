@@ -1,26 +1,30 @@
 #include "util.h"
 
+#include <errno.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
 
-void msg_send(json_object* msg) {
+void msg_send(json_object* msg)
+{
     printf("%s\n", json_object_to_json_string(msg));
     fflush(stdout);
     json_object_put(msg);
 }
 
-json_object* msg_recv() {
+json_object* msg_recv()
+{
     char* input_line = NULL;
     size_t input_len = 0;
 
     errno = 0;
     ssize_t input_bytes_read = getline(&input_line, &input_len, stdin);
-    if (input_bytes_read == -1) {
+    if (input_bytes_read == -1)
+    {
         // End of stdin; return NULL.
-        if (errno == 0) {
+        if (errno == 0)
+        {
             free(input_line);
             return NULL;
         }
@@ -32,7 +36,8 @@ json_object* msg_recv() {
     }
 
     json_object* msg = json_tokener_parse(input_line);
-    if (msg == NULL) {
+    if (msg == NULL)
+    {
         fprintf(stderr, "Error: recv_msg: couldn't parse line as json");
         free(input_line);
         exit(EXIT_FAILURE);
@@ -61,13 +66,15 @@ json_object* generic_reply(json_object* msg)
     json_object_get(reply_src);
     json_object_object_add(reply, "src", reply_src);
 
-    json_object* reply_in_reply_to = json_object_object_get(json_object_object_get(msg, "body"), "msg_id");
+    json_object* reply_in_reply_to =
+        json_object_object_get(json_object_object_get(msg, "body"), "msg_id");
     json_object_get(reply_in_reply_to);
     json_object_object_add(reply_body, "in_reply_to", reply_in_reply_to);
 
     // Generate reply type: "XXX_ok"
-    json_object* type = json_object_object_get(json_object_object_get(msg, "body"), "type");
-    const char *name = json_object_get_string(type);
+    json_object* type =
+        json_object_object_get(json_object_object_get(msg, "body"), "type");
+    const char* name = json_object_get_string(type);
     size_t n = strlen(name);
     char new_name[n + 4]; // +4 for "_ok" and null terminator.
     strcpy(new_name, name);
@@ -83,13 +90,15 @@ json_object* generic_reply(json_object* msg)
     return reply;
 }
 
-const char* node_id(json_object* init_msg) {
+const char* node_id(json_object* init_msg)
+{
     json_object* body = json_object_object_get(init_msg, "body");
     json_object* node_id = json_object_object_get(body, "node_id");
     return json_object_get_string(node_id);
 }
 
-const char* msg_type(json_object* msg) {
+const char* msg_type(json_object* msg)
+{
     json_object* body = json_object_object_get(msg, "body");
     json_object* type = json_object_object_get(body, "type");
     return json_object_get_string(type);

@@ -100,7 +100,7 @@ Conch* conch_init(int64_t initial_conch_value)
 {
     Conch* conch = malloc(sizeof(Conch));
     conch->conch_value = initial_conch_value;
-    conch->conch_available = false;
+    conch->conch_available = true;
     return conch;
 }
 
