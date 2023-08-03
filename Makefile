@@ -46,7 +46,7 @@ build:
 
 .PHONY: run
 run:
-	docker run --rm -it -v $(PWD):/app ggc
+	docker run --rm -it -p 8080:8080 -v $(PWD):/app ggc
 
 .PHONY: clean
 clean:
