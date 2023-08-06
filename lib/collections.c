@@ -179,7 +179,7 @@ void list_set_at(List* list, size_t index, void* item)
     list->data[index] = item;
 }
 
-void list_resize(List* list)
+static void list_resize(List* list)
 {
     if (list->length * 2 >= list->max_length)
     {
