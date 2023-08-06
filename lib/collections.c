@@ -99,6 +99,11 @@ typedef struct Conch
 Conch* conch_init(int64_t initial_conch_value)
 {
     Conch* conch = malloc(sizeof(Conch));
+    if (conch == NULL)
+    {
+        fprintf(stderr, "Error: conch_init: malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
     conch->conch_value = initial_conch_value;
     conch->conch_available = true;
     return conch;
