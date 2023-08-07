@@ -181,7 +181,7 @@ void list_set_at(List* list, size_t index, void* item)
 
 static void list_resize(List* list)
 {
-    if (list->length * 2 >= list->max_length)
+    if (list->length == list->max_length)
     {
         list->max_length *= 2;
         list->data = realloc(list->data, list->max_length * sizeof(void*));
