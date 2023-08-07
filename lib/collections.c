@@ -338,9 +338,13 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
     {
         while (dictionary->key_value_pairs[index].key != NULL)
         {
+            if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+            {
+                dictionary->key_value_pairs[index].value = value;
+                return;
+            }
             index = (index + 1) % dictionary->max_length;
         }
-        dictionary->key_value_pairs[index].value = value;
     }
 }
 
