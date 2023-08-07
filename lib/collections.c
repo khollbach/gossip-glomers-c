@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "collections.h"
 
 #define INITIAL_LIST_MAX_LENGTH 16
+#define INITIAL_DICTIONARY_MAX_LENGTH 16
+#define FNV_OFFSET 14695981039346656037UL
+#define FNV_PRIME 1099511628211UL
 
 typedef struct Node
 {
@@ -230,4 +234,158 @@ void list_free(List* list)
 {
     free(list->data);
     free(list);
+}
+
+typedef struct KeyValuePair
+{
+    const char* key;
+    void* value;
+} KeyValuePair;
+
+// FNV-1a hash function
+static uint64_t hash_key(const char* key)
+{
+    uint64_t hash = FNV_OFFSET;
+    for (const char* c = key; *c != '\0'; c++)
+    {
+        hash ^= (uint64_t)(unsigned char)(*c);
+        hash *= FNV_PRIME;
+    }
+    return hash;
+}
+
+// Dictionary ADT
+typedef struct Dictionary
+{
+    KeyValuePair* key_value_pairs;
+    size_t max_length;
+    size_t length;
+} Dictionary;
+
+Dictionary* dictionary_init(void)
+{
+    Dictionary* dictionary = malloc(sizeof(Dictionary));
+    if (dictionary == NULL)
+    {
+        fprintf(stderr, "Error: dictionary_init: malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    dictionary->key_value_pairs =
+        calloc(INITIAL_DICTIONARY_MAX_LENGTH, sizeof(KeyValuePair));
+    if (dictionary->key_value_pairs == NULL)
+    {
+        fprintf(stderr, "Error: dictionary_init: malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    dictionary->max_length = INITIAL_DICTIONARY_MAX_LENGTH;
+    dictionary->length = 0;
+    return dictionary;
+}
+
+static void dictionary_rebuild(Dictionary* dictionary)
+{
+    size_t new_max_length;
+    if (dictionary->length == dictionary->max_length)
+    {
+        new_max_length = dictionary->max_length * 2;
+    }
+    else if (dictionary->length * 4 <= dictionary->max_length &&
+             dictionary->max_length > INITIAL_DICTIONARY_MAX_LENGTH)
+    {
+        new_max_length = dictionary->max_length / 2;
+    }
+    else
+    {
+        return;
+    }
+
+    KeyValuePair* new_key_value_pairs =
+        calloc(new_max_length, sizeof(KeyValuePair));
+    if (new_key_value_pairs == NULL)
+    {
+        fprintf(stderr, "Error: dictionary_rebuild: calloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    for (size_t i = 0; i < dictionary->max_length; i++)
+    {
+        KeyValuePair key_value_pair = dictionary->key_value_pairs[i];
+        uint64_t index = hash_key(key_value_pair.key) % new_max_length;
+        while (new_key_value_pairs[index].key != NULL)
+        {
+            index = (index + 1) % dictionary->max_length;
+        }
+        new_key_value_pairs[index] = key_value_pair;
+    }
+    dictionary->max_length = new_max_length;
+    dictionary->key_value_pairs = new_key_value_pairs;
+}
+
+void dictionary_insert(Dictionary* dictionary, const char* key, void* value)
+{
+    KeyValuePair key_value_pair = {key, value};
+    dictionary_rebuild(dictionary);
+    uint64_t index = hash_key(key) % dictionary->max_length;
+    while (dictionary->key_value_pairs[index].key != NULL)
+    {
+        index = (index + 1) % dictionary->max_length;
+    }
+    dictionary->key_value_pairs[index] = key_value_pair;
+    dictionary->length++;
+}
+
+void* dictionary_get(Dictionary* dictionary, const char* key)
+{
+    uint64_t index = hash_key(key) % dictionary->max_length;
+    while (dictionary->key_value_pairs[index].key != NULL)
+    {
+        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+        {
+            return dictionary->key_value_pairs[index].value;
+        }
+        index = (index + 1) % dictionary->max_length;
+    }
+    fprintf(stderr, "Error: dictionary_get: key not found\n");
+    exit(EXIT_FAILURE);
+}
+
+void* dictionary_remove(Dictionary* dictionary, const char* key)
+{
+    uint64_t index = hash_key(key) % dictionary->max_length;
+    while (dictionary->key_value_pairs[index].key != NULL)
+    {
+        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+        {
+            void* value = dictionary->key_value_pairs[index].value;
+            dictionary->key_value_pairs[index].key = NULL;
+            dictionary->key_value_pairs[index].value = NULL;
+            dictionary->length--;
+            dictionary_rebuild(dictionary);
+            return value;
+        }
+        index = (index + 1) % dictionary->max_length;
+    }
+    fprintf(stderr, "Error: dictionary_remove: key not found\n");
+    exit(EXIT_FAILURE);
+}
+
+bool dictionary_contains(Dictionary* dictionary, const char* key)
+{
+    uint64_t index = hash_key(key) % dictionary->max_length;
+    while (dictionary->key_value_pairs[index].key != NULL)
+    {
+        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+        {
+            return true;
+        }
+        index = (index + 1) % dictionary->max_length;
+    }
+    return false;
+}
+
+size_t dictionary_length(Dictionary* dictionary) { return dictionary->length; }
+
+void dictionary_free(Dictionary* dictionary)
+{
+    free(dictionary->key_value_pairs);
+    free(dictionary);
 }
