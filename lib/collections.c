@@ -86,7 +86,8 @@ void queue_free(Queue* queue)
 {
     while (!queue_is_empty(queue))
     {
-        queue_dequeue(queue);
+        void* data = queue_dequeue(queue);
+        free(data);
     }
     free(queue);
 }
