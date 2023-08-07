@@ -320,17 +320,28 @@ static void dictionary_rebuild(Dictionary* dictionary)
     dictionary->key_value_pairs = new_key_value_pairs;
 }
 
-void dictionary_insert(Dictionary* dictionary, const char* key, void* value)
+void dictionary_set(Dictionary* dictionary, const char* key, void* value)
 {
-    KeyValuePair key_value_pair = {key, value};
-    dictionary_rebuild(dictionary);
     uint64_t index = hash_key(key) % dictionary->max_length;
-    while (dictionary->key_value_pairs[index].key != NULL)
+    if (!dictionary_contains(dictionary, key))
     {
-        index = (index + 1) % dictionary->max_length;
+        KeyValuePair key_value_pair = {key, value};
+        dictionary_rebuild(dictionary);
+        while (dictionary->key_value_pairs[index].key != NULL)
+        {
+            index = (index + 1) % dictionary->max_length;
+        }
+        dictionary->key_value_pairs[index] = key_value_pair;
+        dictionary->length++;
     }
-    dictionary->key_value_pairs[index] = key_value_pair;
-    dictionary->length++;
+    else
+    {
+        while (dictionary->key_value_pairs[index].key != NULL)
+        {
+            index = (index + 1) % dictionary->max_length;
+        }
+        dictionary->key_value_pairs[index].value = value;
+    }
 }
 
 void* dictionary_get(Dictionary* dictionary, const char* key)
