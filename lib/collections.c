@@ -191,7 +191,8 @@ static void list_resize(List* list)
             exit(EXIT_FAILURE);
         }
     }
-    else if (list->length * 4 <= list->max_length)
+    else if (list->length * 4 <= list->max_length &&
+             list->max_length > INITIAL_LIST_MAX_LENGTH)
     {
         list->max_length /= 2;
         list->data = realloc(list->data, list->max_length * sizeof(void*));
@@ -205,8 +206,9 @@ static void list_resize(List* list)
 
 void list_append(List* list, void* item)
 {
-    list->data[list->length++] = item;
+    list->length += 1;
     list_resize(list);
+    list->data[list->length - 1] = item;
 }
 
 void* list_pop(List* list)
@@ -216,18 +218,15 @@ void* list_pop(List* list)
         fprintf(stderr, "Error: list_pop: list is empty\n");
         exit(EXIT_FAILURE);
     }
-    return list->data[--list->length];
+    void* returned_item = list->data[--list->length];
     list_resize(list);
+    return returned_item;
 }
 
 size_t list_length(List* list) { return list->length; }
 
 void list_free(List* list)
 {
-    for (size_t i = 0; i < list->length; i++)
-    {
-        free(list->data[i]);
-    }
     free(list->data);
     free(list);
 }
