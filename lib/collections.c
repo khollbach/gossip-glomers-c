@@ -236,6 +236,9 @@ void list_free(List* list)
     free(list);
 }
 
+// NOTE: This dictionary implementation assumes ownership of the values and
+// creates copies of the key strings. User-inserted KeyValuePairs guarantee
+// non-nullity for both key and value.
 typedef struct KeyValuePair
 {
     const char* key;
@@ -325,7 +328,19 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
     uint64_t index = hash_key(key) % dictionary->max_length;
     if (!dictionary_contains(dictionary, key))
     {
-        KeyValuePair key_value_pair = {key, value};
+        char* copied_key = key ? strdup(key) : NULL;
+        if (copied_key == NULL)
+        {
+            fprintf(stderr,
+                    "Error: dictionary_set: key is NULL or strdup failed\n");
+            exit(EXIT_FAILURE);
+        }
+        if (value == NULL)
+        {
+            fprintf(stderr, "Error: dictionary_set: value is NULL\n");
+            exit(EXIT_FAILURE);
+        }
+        KeyValuePair key_value_pair = {copied_key, value};
         dictionary_rebuild(dictionary);
         while (dictionary->key_value_pairs[index].key != NULL)
         {
@@ -401,6 +416,18 @@ size_t dictionary_length(Dictionary* dictionary) { return dictionary->length; }
 
 void dictionary_free(Dictionary* dictionary)
 {
+    for (size_t i = 0; i < dictionary->max_length; i++)
+    {
+        KeyValuePair key_value_pair = dictionary->key_value_pairs[i];
+        if (key_value_pair.key != NULL)
+        {
+            free((void*)key_value_pair.key);
+        }
+        if (key_value_pair.value != NULL)
+        {
+            free(key_value_pair.value);
+        }
+    }
     free(dictionary->key_value_pairs);
     free(dictionary);
 }
