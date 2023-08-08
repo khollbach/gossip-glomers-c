@@ -265,6 +265,8 @@ typedef struct Dictionary
     size_t length;
 } Dictionary;
 
+// TODO: Abstract out linear probing function
+// lookup_key(char *key) -> index or -1 if not found
 Dictionary* dictionary_init(void)
 {
     Dictionary* dictionary = malloc(sizeof(Dictionary));
@@ -302,6 +304,7 @@ static void dictionary_rebuild(Dictionary* dictionary)
         return;
     }
 
+    // TODO: Think about leveraging dictionary_set here
     KeyValuePair* new_key_value_pairs =
         calloc(new_max_length, sizeof(KeyValuePair));
     if (new_key_value_pairs == NULL)
@@ -315,7 +318,7 @@ static void dictionary_rebuild(Dictionary* dictionary)
         uint64_t index = hash_key(key_value_pair.key) % new_max_length;
         while (new_key_value_pairs[index].key != NULL)
         {
-            index = (index + 1) % dictionary->max_length;
+            index = (index + 1) % new_max_length;
         }
         new_key_value_pairs[index] = key_value_pair;
     }
@@ -342,6 +345,7 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
         }
         KeyValuePair key_value_pair = {copied_key, value};
         dictionary_rebuild(dictionary);
+        index = hash_key(key) % dictionary->max_length;
         while (dictionary->key_value_pairs[index].key != NULL)
         {
             index = (index + 1) % dictionary->max_length;
@@ -355,6 +359,7 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
         {
             if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
             {
+                free(dictionary->key_value_pairs[index].value);
                 dictionary->key_value_pairs[index].value = value;
                 return;
             }
