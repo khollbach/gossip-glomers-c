@@ -272,6 +272,8 @@ typedef struct Dictionary
     size_t length;
 } Dictionary;
 
+// TODO: Abstract out linear probing function
+// lookup_key(char *key) -> index or -1 if not found
 Dictionary* dictionary_init(void)
 {
     Dictionary* dictionary = malloc(sizeof(Dictionary));
