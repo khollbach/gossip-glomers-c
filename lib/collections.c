@@ -50,6 +50,16 @@ Queue* queue_init(size_t max_length)
     return queue;
 }
 
+void* queue_peek(Queue* queue)
+{
+    if (!queue_is_empty(queue))
+    {
+        return queue->head->data;
+    }
+    fprintf(stderr, "Error: queue_peek: queue is empty\n");
+    exit(EXIT_FAILURE);
+}
+
 void queue_enqueue(Queue* queue, void* data)
 {
     if (queue_is_full(queue))
