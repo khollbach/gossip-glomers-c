@@ -265,8 +265,6 @@ typedef struct Dictionary
     size_t length;
 } Dictionary;
 
-// TODO: Abstract out linear probing function
-// lookup_key(char *key) -> index or -1 if not found
 Dictionary* dictionary_init(void)
 {
     Dictionary* dictionary = malloc(sizeof(Dictionary));
@@ -287,120 +285,18 @@ Dictionary* dictionary_init(void)
     return dictionary;
 }
 
-static void dictionary_rebuild(Dictionary* dictionary)
-{
-    size_t new_max_length;
-    if (dictionary->length == dictionary->max_length)
-    {
-        new_max_length = dictionary->max_length * 2;
-    }
-    else if (dictionary->length * 4 <= dictionary->max_length &&
-             dictionary->max_length > INITIAL_DICTIONARY_MAX_LENGTH)
-    {
-        new_max_length = dictionary->max_length / 2;
-    }
-    else
-    {
-        return;
-    }
-
-    // TODO: Think about leveraging dictionary_set here
-    KeyValuePair* new_key_value_pairs =
-        calloc(new_max_length, sizeof(KeyValuePair));
-    if (new_key_value_pairs == NULL)
-    {
-        fprintf(stderr, "Error: dictionary_rebuild: calloc failed\n");
-        exit(EXIT_FAILURE);
-    }
-    for (size_t i = 0; i < dictionary->max_length; i++)
-    {
-        KeyValuePair key_value_pair = dictionary->key_value_pairs[i];
-        uint64_t index = hash_key(key_value_pair.key) % new_max_length;
-        while (new_key_value_pairs[index].key != NULL)
-        {
-            index = (index + 1) % new_max_length;
-        }
-        new_key_value_pairs[index] = key_value_pair;
-    }
-    dictionary->max_length = new_max_length;
-    dictionary->key_value_pairs = new_key_value_pairs;
-}
-
-void dictionary_set(Dictionary* dictionary, const char* key, void* value)
-{
-    uint64_t index = hash_key(key) % dictionary->max_length;
-    if (!dictionary_contains(dictionary, key))
-    {
-        char* copied_key = key ? strdup(key) : NULL;
-        if (copied_key == NULL)
-        {
-            fprintf(stderr,
-                    "Error: dictionary_set: key is NULL or strdup failed\n");
-            exit(EXIT_FAILURE);
-        }
-        if (value == NULL)
-        {
-            fprintf(stderr, "Error: dictionary_set: value is NULL\n");
-            exit(EXIT_FAILURE);
-        }
-        KeyValuePair key_value_pair = {copied_key, value};
-        dictionary_rebuild(dictionary);
-        index = hash_key(key) % dictionary->max_length;
-        while (dictionary->key_value_pairs[index].key != NULL)
-        {
-            index = (index + 1) % dictionary->max_length;
-        }
-        dictionary->key_value_pairs[index] = key_value_pair;
-        dictionary->length++;
-    }
-    else
-    {
-        while (dictionary->key_value_pairs[index].key != NULL)
-        {
-            if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
-            {
-                free(dictionary->key_value_pairs[index].value);
-                dictionary->key_value_pairs[index].value = value;
-                return;
-            }
-            index = (index + 1) % dictionary->max_length;
-        }
-    }
-}
-
-void* dictionary_get(Dictionary* dictionary, const char* key)
+static uint64_t dictionary_lookup(Dictionary* dictionary, const char* key)
 {
     uint64_t index = hash_key(key) % dictionary->max_length;
     while (dictionary->key_value_pairs[index].key != NULL)
     {
         if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
         {
-            return dictionary->key_value_pairs[index].value;
+            return index;
         }
         index = (index + 1) % dictionary->max_length;
     }
-    fprintf(stderr, "Error: dictionary_get: key not found\n");
-    exit(EXIT_FAILURE);
-}
-
-void* dictionary_remove(Dictionary* dictionary, const char* key)
-{
-    uint64_t index = hash_key(key) % dictionary->max_length;
-    while (dictionary->key_value_pairs[index].key != NULL)
-    {
-        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
-        {
-            void* value = dictionary->key_value_pairs[index].value;
-            dictionary->key_value_pairs[index].key = NULL;
-            dictionary->key_value_pairs[index].value = NULL;
-            dictionary->length--;
-            dictionary_rebuild(dictionary);
-            return value;
-        }
-        index = (index + 1) % dictionary->max_length;
-    }
-    fprintf(stderr, "Error: dictionary_remove: key not found\n");
-    exit(EXIT_FAILURE);
+    return -1;
 }
 
 bool dictionary_contains(Dictionary* dictionary, const char* key)
@@ -415,6 +311,127 @@ bool dictionary_contains(Dictionary* dictionary, const char* key)
         index = (index + 1) % dictionary->max_length;
     }
     return false;
+}
+
+void dictionary_set(Dictionary* dictionary, const char* key, void* value);
+
+static void dictionary_rebuild(Dictionary** dictionary_ptr)
+{
+    size_t new_max_length;
+    Dictionary* dictionary = *dictionary_ptr;
+    if (dictionary->length == dictionary->max_length)
+    {
+        new_max_length = dictionary->max_length * 2;
+    }
+    else if (dictionary->length * 4 <= dictionary->max_length &&
+             dictionary->max_length > INITIAL_DICTIONARY_MAX_LENGTH)
+    {
+        new_max_length = dictionary->max_length / 2;
+    }
+    else
+    {
+        return;
+    }
+
+    Dictionary* new_dictionary = malloc(sizeof(Dictionary));
+    if (new_dictionary == NULL)
+    {
+        fprintf(stderr, "Error: dictionary_rebuild: malloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    KeyValuePair* new_key_value_pairs =
+        calloc(new_max_length, sizeof(KeyValuePair));
+    if (new_key_value_pairs == NULL)
+    {
+        fprintf(stderr, "Error: dictionary_rebuild: calloc failed\n");
+        exit(EXIT_FAILURE);
+    }
+    new_dictionary->max_length = new_max_length;
+    new_dictionary->key_value_pairs = new_key_value_pairs;
+    for (size_t i = 0; i < dictionary->max_length; i++)
+    {
+        KeyValuePair key_value_pair = dictionary->key_value_pairs[i];
+        dictionary_set(new_dictionary, key_value_pair.key,
+                       key_value_pair.value);
+    }
+    dictionary_free(dictionary);
+    dictionary_ptr = &new_dictionary;
+}
+
+void dictionary_set(Dictionary* dictionary, const char* key, void* value)
+{
+    uint64_t index = dictionary_lookup(dictionary, key);
+    // Key does not exist, add new KeyValuePair
+    if (index == -1)
+    {
+        char* copied_key = key ? strdup(key) : NULL;
+        if (copied_key == NULL)
+        {
+            fprintf(stderr,
+                    "Error: dictionary_set: key is NULL or strdup failed\n");
+            exit(EXIT_FAILURE);
+        }
+        if (value == NULL)
+        {
+            fprintf(stderr, "Error: dictionary_set: value is NULL\n");
+            exit(EXIT_FAILURE);
+        }
+        KeyValuePair key_value_pair = {copied_key, value};
+        dictionary_rebuild(&dictionary);
+        index = dictionary_lookup(dictionary, key);
+        dictionary->key_value_pairs[index] = key_value_pair;
+        dictionary->length++;
+    }
+    // Key already exists, just replace value (no need to free the key)
+    else
+    {
+        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+        {
+            free(dictionary->key_value_pairs[index].value);
+            dictionary->key_value_pairs[index].value = value;
+            return;
+        }
+        index = (index + 1) % dictionary->max_length;
+    }
+}
+
+void* dictionary_get(Dictionary* dictionary, const char* key)
+{
+    uint64_t index = dictionary_lookup(dictionary, key);
+    // Key successfully found, return value
+    if (index != -1 && strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+    {
+        return dictionary->key_value_pairs[index].value;
+    }
+    // Raise error if key not found
+    else
+    {
+        fprintf(stderr, "Error: dictionary_get: key not found\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void* dictionary_remove(Dictionary* dictionary, const char* key)
+{
+    uint64_t index = dictionary_lookup(dictionary, key);
+    // Key successfully found, return value
+    if (index != -1 && strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+    {
+        void* value = dictionary->key_value_pairs[index].value;
+        free((void*)dictionary->key_value_pairs[index].key);
+        dictionary->key_value_pairs[index].key = NULL;
+        dictionary->key_value_pairs[index].value = NULL;
+        dictionary->length--;
+        dictionary_rebuild(&dictionary);
+        return value;
+    }
+    // Raise error if key not found
+    else
+    {
+
+        fprintf(stderr, "Error: dictionary_remove: key not found\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 size_t dictionary_length(Dictionary* dictionary) { return dictionary->length; }
