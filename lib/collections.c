@@ -301,19 +301,8 @@ static uint64_t dictionary_lookup(Dictionary* dictionary, const char* key)
 
 bool dictionary_contains(Dictionary* dictionary, const char* key)
 {
-    uint64_t index = hash_key(key) % dictionary->max_length;
-    while (dictionary->key_value_pairs[index].key != NULL)
-    {
-        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
-        {
-            return true;
-        }
-        index = (index + 1) % dictionary->max_length;
-    }
-    return false;
+    return dictionary_lookup(dictionary, key) != -1;
 }
-
-void dictionary_set(Dictionary* dictionary, const char* key, void* value);
 
 static void dictionary_rebuild(Dictionary** dictionary_ptr)
 {
@@ -355,7 +344,7 @@ static void dictionary_rebuild(Dictionary** dictionary_ptr)
                        key_value_pair.value);
     }
     dictionary_free(dictionary);
-    dictionary_ptr = &new_dictionary;
+    *dictionary_ptr = new_dictionary;
 }
 
 void dictionary_set(Dictionary* dictionary, const char* key, void* value)
@@ -385,13 +374,9 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
     // Key already exists, just replace value (no need to free the key)
     else
     {
-        if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
-        {
-            free(dictionary->key_value_pairs[index].value);
-            dictionary->key_value_pairs[index].value = value;
-            return;
-        }
-        index = (index + 1) % dictionary->max_length;
+        free(dictionary->key_value_pairs[index].value);
+        dictionary->key_value_pairs[index].value = value;
+        return;
     }
 }
 
@@ -399,7 +384,7 @@ void* dictionary_get(Dictionary* dictionary, const char* key)
 {
     uint64_t index = dictionary_lookup(dictionary, key);
     // Key successfully found, return value
-    if (index != -1 && strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+    if (index != -1)
     {
         return dictionary->key_value_pairs[index].value;
     }
@@ -415,7 +400,7 @@ void* dictionary_remove(Dictionary* dictionary, const char* key)
 {
     uint64_t index = dictionary_lookup(dictionary, key);
     // Key successfully found, return value
-    if (index != -1 && strcmp(dictionary->key_value_pairs[index].key, key) == 0)
+    if (index != -1)
     {
         void* value = dictionary->key_value_pairs[index].value;
         free((void*)dictionary->key_value_pairs[index].key);
