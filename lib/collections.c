@@ -314,14 +314,9 @@ bool dictionary_contains(Dictionary* dictionary, const char* key)
 static void dictionary_rebuild(Dictionary* dictionary)
 {
     size_t new_max_length;
-    if (dictionary->length == dictionary->max_length)
+    if (dictionary->length >= dictionary->max_length / 2)
     {
         new_max_length = dictionary->max_length * 2;
-    }
-    else if (dictionary->length * 4 <= dictionary->max_length &&
-             dictionary->max_length > INITIAL_DICTIONARY_MAX_LENGTH)
-    {
-        new_max_length = dictionary->max_length / 2;
     }
     else
     {
