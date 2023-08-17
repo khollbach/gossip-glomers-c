@@ -33,7 +33,6 @@ void list_free(List* list);
 Dictionary* dictionary_init(void);
 void dictionary_set(Dictionary* dictionary, const char* key, void* value);
 void* dictionary_get(Dictionary* dictionary, const char* key);
-void* dictionary_remove(Dictionary* dictionary, const char* key);
 bool dictionary_contains(Dictionary* dictionary, const char* key);
 size_t dictionary_length(Dictionary* dictionary);
 void dictionary_free(Dictionary* dictionary);
