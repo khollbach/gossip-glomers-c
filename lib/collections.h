@@ -7,6 +7,7 @@
 typedef struct Queue Queue;
 typedef struct Conch Conch;
 typedef struct List List;
+typedef struct Dictionary Dictionary;
 
 Queue* queue_init(size_t size);
 void queue_enqueue(Queue* queue, void* data);
@@ -28,3 +29,10 @@ void* list_get_at(List* list, size_t index);
 void list_set_at(List* list, size_t index, void* data);
 size_t list_length(List* list);
 void list_free(List* list);
+
+Dictionary* dictionary_init(void);
+void dictionary_set(Dictionary* dictionary, const char* key, void* value);
+void* dictionary_get(Dictionary* dictionary, const char* key);
+bool dictionary_contains(Dictionary* dictionary, const char* key);
+size_t dictionary_length(Dictionary* dictionary);
+void dictionary_free(Dictionary* dictionary);
