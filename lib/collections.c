@@ -6,6 +6,7 @@
 
 #define INITIAL_LIST_MAX_LENGTH 16
 #define INITIAL_DICTIONARY_MAX_LENGTH 16
+#define KEY_NOT_FOUND -1
 #define FNV_OFFSET 14695981039346656037UL
 #define FNV_PRIME 1099511628211UL
 
@@ -282,8 +283,6 @@ typedef struct Dictionary
     size_t length;
 } Dictionary;
 
-// TODO: Abstract out linear probing function
-// lookup_key(char *key) -> index or -1 if not found
 Dictionary* dictionary_init(void)
 {
     Dictionary* dictionary = malloc(sizeof(Dictionary));
@@ -315,12 +314,12 @@ static uint64_t dictionary_lookup(Dictionary* dictionary, const char* key)
         }
         index = (index + 1) % dictionary->max_length;
     }
-    return -1;
+    return KEY_NOT_FOUND;
 }
 
 bool dictionary_contains(Dictionary* dictionary, const char* key)
 {
-    return dictionary_lookup(dictionary, key) != -1;
+    return dictionary_lookup(dictionary, key) != KEY_NOT_FOUND;
 }
 
 static void dictionary_rebuild(Dictionary* dictionary)
@@ -370,7 +369,7 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
 {
     uint64_t index = dictionary_lookup(dictionary, key);
     // Key does not exist, add new KeyValuePair
-    if (index == -1)
+    if (index == KEY_NOT_FOUND)
     {
         char* copied_key = key ? strdup(key) : NULL;
         if (copied_key == NULL)
@@ -403,7 +402,7 @@ void* dictionary_get(Dictionary* dictionary, const char* key)
 {
     uint64_t index = dictionary_lookup(dictionary, key);
     // Key successfully found, return value
-    if (index != -1)
+    if (index != KEY_NOT_FOUND)
     {
         return dictionary->key_value_pairs[index].value;
     }
