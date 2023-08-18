@@ -78,6 +78,7 @@ void vec_deque_test_reserve_boundary_parts() {
        TEST_ASSERT_EQUAL(i, pop_back_int(deque));
        // vec_deque_int_debug_print(deque);
     }
+    vec_deque_free(deque);
 }
 
 void vec_deque_test_reserve_boundary_whole() {
@@ -99,6 +100,7 @@ void vec_deque_test_reserve_boundary_whole() {
     for(int i = count; i >= 1; i--) {
        TEST_ASSERT_EQUAL(i, pop_back_int(deque));
     }
+    vec_deque_free(deque);
 }
 
 int main(void) {
