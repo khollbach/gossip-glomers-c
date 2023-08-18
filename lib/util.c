@@ -1,4 +1,5 @@
 #include "util.h"
+#include "json-c/json_object.h"
 
 #include <errno.h>
 #include <stdint.h>
@@ -38,7 +39,7 @@ json_object* msg_recv()
     json_object* msg = json_tokener_parse(input_line);
     if (msg == NULL)
     {
-        fprintf(stderr, "Error: recv_msg: couldn't parse line as json");
+        fprintf(stderr, "Error: recv_msg: couldn't parse line as json\n");
         free(input_line);
         exit(EXIT_FAILURE);
     }
@@ -95,6 +96,42 @@ const char* node_id(json_object* init_msg)
     json_object* body = json_object_object_get(init_msg, "body");
     json_object* node_id = json_object_object_get(body, "node_id");
     return json_object_get_string(node_id);
+}
+
+const char** node_ids(json_object* init_msg)
+{
+    json_object* body = json_object_object_get(init_msg, "body");
+    json_object* node_ids = json_object_object_get(body, "node_ids");
+    if (json_object_get_type(node_ids) != json_type_array)
+    {
+        fprintf(stderr, "Error: node_ids: node_ids is not an array\n");
+        exit(EXIT_FAILURE);
+    }
+    size_t array_length = json_object_array_length(node_ids);
+    const char** peers = malloc(sizeof(char*) * array_length);
+    for (size_t i = 0; i < array_length; i++)
+    {
+        json_object* node_id = json_object_array_get_idx(node_ids, i);
+        if (json_object_get_type(node_id) != json_type_string)
+        {
+            fprintf(stderr, "Error: node_ids: node_id is not a string\n");
+            exit(EXIT_FAILURE);
+        }
+        peers[i] = json_object_get_string(node_id);
+    }
+    return peers;
+}
+
+const size_t node_ids_count(json_object* init_msg)
+{
+    json_object* body = json_object_object_get(init_msg, "body");
+    json_object* node_ids = json_object_object_get(body, "node_ids");
+    if (json_object_get_type(node_ids) != json_type_array)
+    {
+        fprintf(stderr, "Error: node_ids: node_ids is not an array\n");
+        exit(EXIT_FAILURE);
+    }
+    return json_object_array_length(node_ids);
 }
 
 const char* msg_type(json_object* msg)
