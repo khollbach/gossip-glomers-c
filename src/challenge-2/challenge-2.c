@@ -1,4 +1,5 @@
 #include "../../lib/collections.h"
+#include "../../lib/tcp.h"
 #include "../../lib/util.h"
 #include "json-c/json_object.h"
 #include <assert.h>
@@ -26,13 +27,15 @@ int main(void)
     json_object* init_msg = msg_recv();
     if (init_msg == NULL)
     {
-        fprintf(stderr, "expected init message, got EOF");
+        fprintf(stderr, "expected init message, got EOF\n");
         exit(EXIT_FAILURE);
     }
     bool is_leader = strcmp(node_id(init_msg), LEADER_NODE) == 0;
+    const char** peers = node_ids(init_msg);
+    const size_t num_peers = node_ids_count(init_msg);
+    tcp_init(peers, num_peers);
     msg_send(init_reply(init_msg));
     json_object_put(init_msg);
-
     if (is_leader)
     {
         leader_event_loop();
@@ -41,6 +44,7 @@ int main(void)
     {
         follower_event_loop();
     }
+    tcp_free(peers, num_peers);
 }
 
 void follower_event_loop()
@@ -60,10 +64,10 @@ void follower_event_loop()
         }
         else
         {
-            fprintf(
-                stderr,
-                "Error: follower_event_loop: unrecognized message type: \"%s\"",
-                type);
+            fprintf(stderr,
+                    "Error: follower_event_loop: unrecognized message type: "
+                    "\"%s\"\n",
+                    type);
             free(msg);
             exit(EXIT_FAILURE);
         }
@@ -93,7 +97,7 @@ void leader_event_loop()
             {
                 assert(!conch_is_available(conch));
                 fprintf(stderr, "Warn: leader_event_loop: shut down with "
-                                "unserved conch requests");
+                                "unserved conch requests\n");
             }
             break;
         }
@@ -120,7 +124,7 @@ void leader_event_loop()
         {
             fprintf(
                 stderr,
-                "Error: leader_event_loop: unrecognized message type: \"%s\"",
+                "Error: leader_event_loop: unrecognized message type: \"%s\"\n",
                 type);
             queue_free(queue);
             conch_free(conch);
