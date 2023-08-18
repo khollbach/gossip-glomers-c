@@ -36,7 +36,7 @@ void setUp(void) {}
 
 void tearDown(void) {}
 
-void test_simple_pops() {
+void vec_deque_test_simple_pops() {
     VecDeque* deque = vec_deque_init(3);
     TEST_ASSERT_EQUAL(0, vec_deque_len(deque));
 
@@ -50,7 +50,7 @@ void test_simple_pops() {
     vec_deque_free(deque);
 }
 
-void test_push_pop_loops() {
+void vec_deque_test_push_pop_loops() {
 
     VecDeque* deque = vec_deque_init(3);
     for(int i = 0; i < 10; i++) {
@@ -64,7 +64,7 @@ void test_push_pop_loops() {
     vec_deque_free(deque);
 }
 
-void test_reserve_boundary_parts() {
+void vec_deque_test_reserve_boundary_parts() {
     VecDeque* deque = vec_deque_init(3);
     int count = 10;
 
@@ -80,7 +80,7 @@ void test_reserve_boundary_parts() {
     }
 }
 
-void test_reserve_boundary_whole() {
+void vec_deque_test_reserve_boundary_whole() {
     
     VecDeque* deque = vec_deque_init(3);
 
@@ -103,9 +103,9 @@ void test_reserve_boundary_whole() {
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_simple_pops);
-    RUN_TEST(test_push_pop_loops);
-    RUN_TEST(test_reserve_boundary_parts);
-    RUN_TEST(test_reserve_boundary_whole);
+    RUN_TEST(vec_deque_test_simple_pops);
+    RUN_TEST(vec_deque_test_push_pop_loops);
+    RUN_TEST(vec_deque_test_reserve_boundary_parts);
+    RUN_TEST(vec_deque_test_reserve_boundary_whole);
     return UNITY_END();
 }
