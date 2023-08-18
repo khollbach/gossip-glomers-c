@@ -39,6 +39,27 @@ $(BUILD_DIR)/util.o: $(LIB_DIR)/util.c $(LIB_DIR)/util.h
 $(BUILD_DIR)/collections.o: $(LIB_DIR)/collections.c $(LIB_DIR)/collections.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD_DIR)/vec_deque.o: $(LIB_DIR)/vec_deque.c $(LIB_DIR)/vec_deque.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Tests section
+TEST_SRC := lib/tests.c
+UNITY_SRC := ../unity/src/unity.c
+TEST_OBJS := $(BUILD_DIR)/tests.o $(BUILD_DIR)/vec_deque.o $(BUILD_DIR)/unity.o
+
+$(BUILD_DIR)/lib_tests.out: $(TEST_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+$(BUILD_DIR)/tests.o: $(TEST_SRC) $(LIB_DIR)/collections.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/unity.o: $(UNITY_SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: tests
+tests: $(BUILD_DIR)/lib_tests.out
+	./$(BUILD_DIR)/lib_tests.out
+
 .PHONY: build
 build:
 	docker build -t ggc .
