@@ -91,7 +91,7 @@ void* vec_deque_pop_front(VecDeque* deque){
   return elem;
 }
 
-size_t vec_deque_len(VecDeque* deque) {
+size_t vec_deque_length(VecDeque* deque) {
   return deque->len;
 }
 

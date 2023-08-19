@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../../unity/src/unity.h"
-#include "vec_deque.h" // Replace with the actual name of your header file
+#include "../../lib/vec_deque.h" // Replace with the actual name of your header file
 
 //Convenience methods for pushing/popping ints:
 
@@ -38,12 +38,12 @@ void tearDown(void) {}
 
 void vec_deque_test_simple_pops() {
     VecDeque* deque = vec_deque_init(3);
-    TEST_ASSERT_EQUAL(0, vec_deque_len(deque));
+    TEST_ASSERT_EQUAL(0, vec_deque_length(deque));
 
     push_back_int(deque, 42);
     push_front_int(deque, 1337);
     
-    TEST_ASSERT_EQUAL(2, vec_deque_len(deque));
+    TEST_ASSERT_EQUAL(2, vec_deque_length(deque));
 
     TEST_ASSERT_EQUAL(42, pop_back_int(deque));
     TEST_ASSERT_EQUAL(1337, pop_front_int(deque));
@@ -78,7 +78,7 @@ void vec_deque_test_reserve_boundary_parts() {
         push_back_int(deque, i);
     }
 
-    TEST_ASSERT_EQUAL(count, vec_deque_len(deque));
+    TEST_ASSERT_EQUAL(count, vec_deque_length(deque));
 
     for(int i = count; i >= 1; i--) {
        TEST_ASSERT_EQUAL(i, pop_back_int(deque));
@@ -101,7 +101,7 @@ void vec_deque_test_reserve_boundary_whole() {
         push_back_int(deque, i);
     }
 
-    TEST_ASSERT_EQUAL(count, vec_deque_len(deque));
+    TEST_ASSERT_EQUAL(count, vec_deque_length(deque));
 
     for(int i = count; i >= 1; i--) {
        TEST_ASSERT_EQUAL(i, pop_back_int(deque));
@@ -114,7 +114,7 @@ void vec_deque_test_alloc_zero() {
     push_back_int(deque, 42);
     push_front_int(deque, 1337);
     
-    TEST_ASSERT_EQUAL(2, vec_deque_len(deque));
+    TEST_ASSERT_EQUAL(2, vec_deque_length(deque));
 
     TEST_ASSERT_EQUAL(42, pop_back_int(deque));
     TEST_ASSERT_EQUAL(1337, pop_front_int(deque));
