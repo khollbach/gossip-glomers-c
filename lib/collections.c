@@ -30,13 +30,14 @@ typedef struct Queue
     Node* tail;
     size_t length;
     size_t max_length;
+    void (*free_function)(void*);
 } Queue;
 
 bool queue_is_full(Queue* queue) { return queue->length == queue->max_length; }
 
 bool queue_is_empty(Queue* queue) { return queue->length == 0; }
 
-Queue* queue_init(size_t max_length)
+Queue* queue_init(size_t max_length, void (*free_function)(void*))
 {
     Queue* queue = malloc(sizeof(Queue));
     if (queue == NULL)
@@ -48,6 +49,7 @@ Queue* queue_init(size_t max_length)
     queue->length = 0;
     queue->head = NULL;
     queue->tail = NULL;
+    queue->free_function = free_function;
     return queue;
 }
 
@@ -109,7 +111,9 @@ void queue_free(Queue* queue)
     while (!queue_is_empty(queue))
     {
         void* data = queue_dequeue(queue);
-        free(data);
+        if (queue->free_function) {
+            queue->free_function(data);
+        }
     }
     free(queue);
 }

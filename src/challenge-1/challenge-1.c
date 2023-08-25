@@ -27,11 +27,15 @@ int main()
     }
 }
 
+// Borrows `init_msg`.
+// Returns an owned object.
 json_object* init_reply(json_object* init_msg)
 {
     return generic_reply(init_msg);
 }
 
+// Borrows `echo_msg`.
+// Returns an owned object.
 json_object* echo_reply(json_object* echo_msg)
 {
     json_object* reply = generic_reply(echo_msg);

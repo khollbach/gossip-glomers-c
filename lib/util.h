@@ -20,11 +20,13 @@ json_object* generic_reply(json_object* msg);
 const char* node_id(json_object* init_msg);
 
 // Borrows init_msg.
-// The returned array of strings is owned by the caller.
+// The returned array is owned by the caller, and must be freed.
+// The strings in the array are borrowed from init_msg; do not use them after
+// freeing init_msg.
 const char** node_ids(json_object* init_msg);
 
 // Borrows init_msg.
-const size_t node_ids_count(json_object* init_msg);
+size_t node_ids_count(json_object* init_msg);
 
 // Borrows msg.
 // The returned string is borrowed from msg; don't use it after freeing msg.
