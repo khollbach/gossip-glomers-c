@@ -4,6 +4,7 @@ LDFLAGS += $(shell pkg-config --libs json-c)
 SRC_DIR := src
 BUILD_DIR:= build
 LIB_DIR := lib
+TESTS_DIR := tests
 
 # Generate challenge executables
 CHALLENGES := challenge-1 challenge-2
@@ -38,6 +39,27 @@ $(BUILD_DIR)/util.o: $(LIB_DIR)/util.c $(LIB_DIR)/util.h
 
 $(BUILD_DIR)/collections.o: $(LIB_DIR)/collections.c $(LIB_DIR)/collections.h
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/vec_deque.o: $(LIB_DIR)/vec_deque.c $(LIB_DIR)/vec_deque.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Tests section
+UNITY_SRC := ../unity/src/unity.c
+$(BUILD_DIR)/unity.o: $(UNITY_SRC)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+VEC_DEQUE_TEST_SRC := $(TESTS_DIR)/$(LIB_DIR)/vec_deque_tests.c
+VEC_DEQUE_TEST_OBJS := $(BUILD_DIR)/vec_deque_tests.o $(BUILD_DIR)/vec_deque.o $(BUILD_DIR)/unity.o
+
+$(BUILD_DIR)/vec_deque_tests.out: $(VEC_DEQUE_TEST_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+$(BUILD_DIR)/vec_deque_tests.o: $(VEC_DEQUE_TEST_SRC) $(LIB_DIR)/vec_deque.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: tests
+tests: $(BUILD_DIR)/vec_deque_tests.out
+	valgrind --leak-check=full ./$(BUILD_DIR)/vec_deque_tests.out
 
 .PHONY: build
 build:
