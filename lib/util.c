@@ -73,9 +73,7 @@ json_object* generic_reply(json_object* msg)
     json_object_object_add(reply_body, "in_reply_to", reply_in_reply_to);
 
     // Generate reply type: "XXX_ok"
-    json_object* type =
-        json_object_object_get(json_object_object_get(msg, "body"), "type");
-    const char* name = json_object_get_string(type);
+    const char* name = msg_type(msg);
     size_t n = strlen(name);
     char new_name[n + 4]; // +4 for "_ok" and null terminator.
     strcpy(new_name, name);
@@ -122,7 +120,7 @@ const char** node_ids(json_object* init_msg)
     return peers;
 }
 
-const size_t node_ids_count(json_object* init_msg)
+size_t node_ids_count(json_object* init_msg)
 {
     json_object* body = json_object_object_get(init_msg, "body");
     json_object* node_ids = json_object_object_get(body, "node_ids");

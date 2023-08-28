@@ -27,10 +27,15 @@ typedef struct Message
 
 Dictionary* CHANNEL_STATES = NULL;
 
+// Helper function for using `json_object`s in a `Queue`.
+static void queue_json_object_free(void* obj) {
+    json_object_put(obj);
+}
+
 ChannelState* channel_state_init()
 {
     ChannelState* channel_state = malloc(sizeof(ChannelState));
-    channel_state->send_queue = queue_init(MAX_SEND_QUEUE_SIZE);
+    channel_state->send_queue = queue_init(MAX_SEND_QUEUE_SIZE, queue_json_object_free);
     channel_state->next_send_msg_seq_index = INITIAL_SEND_MSG_SEQ_INDEX;
     channel_state->last_recv_msg_seq_index = INITIAL_RECV_MSG_SEQ_INDEX;
     return channel_state;
@@ -60,10 +65,12 @@ void tcp_free(const char** peers, const size_t num_peers)
     dictionary_free(CHANNEL_STATES);
 }
 
-json_object* generate_ACK_msg(json_object* msg)
+// Borrows `msg`.
+static json_object* generate_ACK_msg(json_object* msg)
 {
-    json_object* ack_msg;
-    // TODO: (Kevan) Extract relevant logic from `generic_reply`
+    json_object* ack_msg = generic_reply(msg);
+    json_object* body = json_object_object_get(ack_msg, "body");
+    json_object_object_add(body, "type", json_object_new_string("ACK"));
     return ack_msg;
 }
 
@@ -115,6 +122,8 @@ json_object* msg_recv_listener()
         {
             json_object* ack_msg = generate_ACK_msg(m);
             msg_send(ack_msg);
+
+            // TODO: return the data message to the caller of this function.
         }
     }
 }
