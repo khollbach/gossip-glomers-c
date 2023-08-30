@@ -115,7 +115,7 @@ void leader_event_loop()
         }
         else if (strcmp(type, "conch_request") == 0)
         {
-            conch_request_handler(msg, queue);
+            conch_request_handler(msg, conch_request_queue);
         }
         else if (strcmp(type, "conch_release") == 0)
         {
