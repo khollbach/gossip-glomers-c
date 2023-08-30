@@ -6,7 +6,6 @@
 
 #define INITIAL_LIST_MAX_LENGTH 16
 #define INITIAL_DICTIONARY_MAX_LENGTH 16
-#define KEY_NOT_FOUND -1
 #define FNV_OFFSET 14695981039346656037UL
 #define FNV_PRIME 1099511628211UL
 
@@ -288,6 +287,12 @@ typedef struct Dictionary
     size_t length;
 } Dictionary;
 
+typedef struct DictionaryLookupResult
+{
+    bool found;
+    size_t index;
+} DictionaryLookupResult;
+
 Dictionary* dictionary_init(void)
 {
     Dictionary* dictionary = malloc(sizeof(Dictionary));
@@ -308,23 +313,25 @@ Dictionary* dictionary_init(void)
     return dictionary;
 }
 
-static ssize_t dictionary_lookup(Dictionary* dictionary, const char* key)
+static DictionaryLookupResult dictionary_lookup(Dictionary* dictionary,
+                                                const char* key)
 {
-    ssize_t index = hash_key(key) % dictionary->max_length;
+    size_t index = hash_key(key) % dictionary->max_length;
     while (dictionary->key_value_pairs[index].key != NULL)
     {
         if (strcmp(dictionary->key_value_pairs[index].key, key) == 0)
         {
-            return index;
+            return (DictionaryLookupResult){true, index};
         }
         index = (index + 1) % dictionary->max_length;
     }
-    return KEY_NOT_FOUND;
+    return (DictionaryLookupResult){false, index};
 }
 
 bool dictionary_contains(Dictionary* dictionary, const char* key)
 {
-    return dictionary_lookup(dictionary, key) != KEY_NOT_FOUND;
+    DictionaryLookupResult lookup_result = dictionary_lookup(dictionary, key);
+    return lookup_result.found;
 }
 
 static void dictionary_rebuild(Dictionary* dictionary)
@@ -372,9 +379,9 @@ static void dictionary_rebuild(Dictionary* dictionary)
 
 void dictionary_set(Dictionary* dictionary, const char* key, void* value)
 {
-    ssize_t index = dictionary_lookup(dictionary, key);
+    DictionaryLookupResult lookup_result = dictionary_lookup(dictionary, key);
     // Key does not exist, add new KeyValuePair
-    if (index == KEY_NOT_FOUND)
+    if (!lookup_result.found)
     {
         char* copied_key = key ? strdup(key) : NULL;
         if (copied_key == NULL)
@@ -389,27 +396,27 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
             exit(EXIT_FAILURE);
         }
         KeyValuePair key_value_pair = {copied_key, value};
-        dictionary_rebuild(dictionary);
-        index = dictionary_lookup(dictionary, key);
-        dictionary->key_value_pairs[index] = key_value_pair;
+        dictionary->key_value_pairs[lookup_result.index] = key_value_pair;
         dictionary->length++;
+        dictionary_rebuild(dictionary);
     }
     // Key already exists, just replace value (no need to free the key)
     else
     {
-        free(dictionary->key_value_pairs[index].value);
-        dictionary->key_value_pairs[index].value = value;
+        // FIX: Leaked underlying queue in the ChannelState value
+        free(dictionary->key_value_pairs[lookup_result.index].value);
+        dictionary->key_value_pairs[lookup_result.index].value = value;
         return;
     }
 }
 
 void* dictionary_get(Dictionary* dictionary, const char* key)
 {
-    ssize_t index = dictionary_lookup(dictionary, key);
+    DictionaryLookupResult lookup_result = dictionary_lookup(dictionary, key);
     // Key successfully found, return value
-    if (index != KEY_NOT_FOUND)
+    if (lookup_result.found)
     {
-        return dictionary->key_value_pairs[index].value;
+        return dictionary->key_value_pairs[lookup_result.index].value;
     }
     // Raise error if key not found
     else
