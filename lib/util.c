@@ -9,6 +9,13 @@
 
 void msg_send(json_object* msg)
 {
+    static uint64_t reply_msg_id = 0;
+
+    // Add a unique msg id to the reply.
+    json_object* reply_body = json_object_object_get(msg, "body");
+    json_object_object_add(reply_body, "msg_id",
+                           json_object_new_int64(reply_msg_id++));
+
     printf("%s\n", json_object_to_json_string(msg));
     fflush(stdout);
     json_object_put(msg);
@@ -48,8 +55,6 @@ json_object* msg_recv()
     return msg;
 }
 
-uint64_t REPLY_MSG_ID = 0;
-
 json_object* generic_reply(json_object* msg)
 {
     json_object* reply = json_object_new_object();
@@ -80,11 +85,6 @@ json_object* generic_reply(json_object* msg)
     strcpy(&(new_name[n]), "_ok");
     json_object* reply_type = json_object_new_string(new_name);
     json_object_object_add(reply_body, "type", reply_type);
-
-    // Add a unique msg id to the reply.
-    uint64_t msg_id = REPLY_MSG_ID++;
-    json_object* reply_msg_id = json_object_new_int64(msg_id);
-    json_object_object_add(reply_body, "msg_id", reply_msg_id);
 
     return reply;
 }
