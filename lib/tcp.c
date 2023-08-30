@@ -46,7 +46,9 @@ void tcp_init(const char** peers, const size_t num_peers)
     CHANNEL_STATES = dictionary_init();
     for (size_t i = 0; i < num_peers; i++)
     {
+        // fprintf(stderr, "tcp_init: before set/get for peer: %s\n", peers[i]);
         dictionary_set(CHANNEL_STATES, peers[i], channel_state_init());
+        // dictionary_get(CHANNEL_STATES, peers[i]);
     }
 }
 
@@ -79,7 +81,9 @@ void msg_send_pusher(json_object* msg)
     const char* peer =
         json_object_get_string(json_object_object_get(msg, "dest"));
     Message* m = malloc(sizeof(Message));
+    fprintf(stderr, "(push) before get. peer: %s\n", peer);
     ChannelState* channel_state = dictionary_get(CHANNEL_STATES, peer);
+    fprintf(stderr, "(push) after get\n");
     m->msg_seq_index = channel_state->next_send_msg_seq_index++;
     json_object_object_add(msg, "seq_msg_index",
                            json_object_new_uint64(m->msg_seq_index));
@@ -97,9 +101,15 @@ json_object* msg_recv_listener()
             return m;
         }
 
-        ChannelState* channel_state = dictionary_get(
-            CHANNEL_STATES,
-            json_object_get_string(json_object_object_get(m, "src")));
+        // Client messages; no need to ACK these.
+        const char* src = json_object_get_string(json_object_object_get(m, "src"));
+        if (!dictionary_contains(CHANNEL_STATES, src)) {
+            return m;
+        }
+
+        fprintf(stderr, "(listen) before get. src: %s\n", src);
+        ChannelState* channel_state = dictionary_get(CHANNEL_STATES, src);
+        fprintf(stderr, "(listen) after get\n");
         json_object* body = json_object_object_get(m, "body");
         json_object* type = json_object_object_get(body, "type");
 
