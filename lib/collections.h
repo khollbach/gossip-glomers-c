@@ -47,7 +47,7 @@ void list_set_at(List* list, size_t index, void* data);
 size_t list_length(List* list);
 void list_free(List* list);
 
-Dictionary* dictionary_init(void);
+Dictionary* dictionary_init(void (*elem_free)(void*));
 void dictionary_set(Dictionary* dictionary, const char* key, void* value);
 void* dictionary_get(Dictionary* dictionary, const char* key);
 bool dictionary_contains(Dictionary* dictionary, const char* key);

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_SEND_QUEUE_SIZE 100
 #define INITIAL_SEND_MSG_SEQ_INDEX 0
@@ -42,9 +43,20 @@ ChannelState* channel_state_init()
     return channel_state;
 }
 
+void channel_state_free(ChannelState* channel_state)
+{
+    queue_free(channel_state->send_queue);
+    free(channel_state);
+}
+
+void channel_state_free_void(void* channel_state) 
+{
+    channel_state_free(channel_state);
+}
+
 void tcp_init(const char** peers, const size_t num_peers)
 {
-    CHANNEL_STATES = dictionary_init();
+    CHANNEL_STATES = dictionary_init(channel_state_free_void);
     PEERS = malloc(num_peers * sizeof(char*));
     for (size_t i = 0; i < num_peers; i++)
     {

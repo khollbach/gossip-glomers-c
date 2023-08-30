@@ -41,7 +41,7 @@ int main(void)
     {
         follower_event_loop();
     }
-    tcp_free(peers, num_peers);
+    tcp_free();
     free(peers);
 }
 
