@@ -283,6 +283,7 @@ static uint64_t hash_key(const char* key)
 typedef struct Dictionary
 {
     KeyValuePair* key_value_pairs;
+    void (*elem_free)(void*);
     size_t max_length;
     size_t length;
 } Dictionary;
@@ -293,7 +294,7 @@ typedef struct DictionaryLookupResult
     size_t index;
 } DictionaryLookupResult;
 
-Dictionary* dictionary_init(void)
+Dictionary* dictionary_init(void (*elem_free)(void*))
 {
     Dictionary* dictionary = malloc(sizeof(Dictionary));
     if (dictionary == NULL)
@@ -309,6 +310,7 @@ Dictionary* dictionary_init(void)
         exit(EXIT_FAILURE);
     }
     dictionary->max_length = INITIAL_DICTIONARY_MAX_LENGTH;
+    dictionary->elem_free = elem_free;
     dictionary->length = 0;
     return dictionary;
 }
@@ -404,7 +406,7 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
     else
     {
         // FIX: Leaked underlying queue in the ChannelState value
-        free(dictionary->key_value_pairs[lookup_result.index].value);
+        dictionary->elem_free(dictionary->key_value_pairs[lookup_result.index].value);
         dictionary->key_value_pairs[lookup_result.index].value = value;
         return;
     }
@@ -439,7 +441,7 @@ void dictionary_free(Dictionary* dictionary)
         }
         if (key_value_pair.value != NULL)
         {
-            free(key_value_pair.value);
+            dictionary->elem_free(key_value_pair.value);
         }
     }
     free(dictionary->key_value_pairs);
