@@ -33,6 +33,12 @@ $(BUILD_DIR)/challenge-1.o: $(CHALLENGE_1_SRC) $(LIB_DIR)/util.h
 $(BUILD_DIR)/challenge-2.o: $(CHALLENGE_2_SRC) $(LIB_DIR)/util.h $(LIB_DIR)/collections.h $(LIB_DIR)/tcp.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# TODO(kevan): clean this up before committing.
+$(BUILD_DIR)/tcp-test.out: $(BUILD_DIR)/tcp-test.o $(BUILD_DIR)/util.o $(BUILD_DIR)/tcp.o $(BUILD_DIR)/collections.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+$(BUILD_DIR)/tcp-test.o: tests/lib/tcp-test.c $(LIB_DIR)/util.h $(LIB_DIR)/tcp.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Generate object files for library modules
 $(BUILD_DIR)/util.o: $(LIB_DIR)/util.c $(LIB_DIR)/util.h
 	$(CC) $(CFLAGS) -c $< -o $@
