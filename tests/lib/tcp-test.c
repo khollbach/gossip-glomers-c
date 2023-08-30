@@ -22,12 +22,12 @@ int main()
 
     const char** peers = node_ids(init_msg);
     size_t num_peers = node_ids_count(init_msg);
-    // tcp_init(peers, num_peers);
+    tcp_init(peers, num_peers);
 
     msg_send(generic_reply(init_msg));
 
     json_object* msg;
-    while ((msg = msg_recv()) != NULL)
+    while ((msg = msg_recv_listener()) != NULL)
     {
         const char* type = msg_type(msg);
         if (strcmp(type, "echo") == 0) {
@@ -49,7 +49,7 @@ int main()
         }
     }
 
-    // tcp_free(peers, num_peers);
+    tcp_free(peers, num_peers);
     json_object_put(init_msg);
 }
 
@@ -70,7 +70,7 @@ void ping_random_peer(json_object* original_msg, const char** peers, size_t num_
     // Include the original message as a payload.
     json_object_object_add(body, "original_msg", original_msg);
 
-    msg_send(ping);
+    msg_send_pusher(ping);
 }
 
 // Takes ownership of `ping`.
@@ -88,7 +88,7 @@ void pong(json_object* ping) {
     json_object_put(ping);
     json_object_object_add(pong_body, "original_msg", original_msg);
 
-    msg_send(pong);
+    msg_send_pusher(pong);
 }
 
 // Takes ownership of `echo_request`.
