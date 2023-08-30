@@ -136,9 +136,7 @@ void leader_event_loop()
 }
 
 // Helper function for using `json_object`s in a `Queue`.
-void queue_json_object_free(void* obj) {
-    json_object_put(obj);
-}
+void queue_json_object_free(void* obj) { json_object_put(obj); }
 
 // Used exclusively by Leader
 // Takes ownership of `conch_request`.

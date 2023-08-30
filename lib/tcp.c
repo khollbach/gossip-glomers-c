@@ -124,6 +124,8 @@ json_object* msg_recv_listener()
             {
                 Message* m = queue_peek(channel_state->send_queue);
                 json_object_get(m->msg);
+                fprintf(stderr, "(send) msg: %s\n",
+                        json_object_to_json_string(m->msg));
                 msg_send(m->msg);
             }
         }
