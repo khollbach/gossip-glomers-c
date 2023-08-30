@@ -106,7 +106,8 @@ void msg_send_pusher(json_object* msg)
     ChannelState* channel_state = dictionary_get(CHANNEL_STATES, peer);
     fprintf(stderr, "(push) after get\n");
     m->msg_seq_index = channel_state->next_send_msg_seq_index++;
-    json_object_object_add(msg, "seq_msg_index",
+    json_object* body = json_object_object_get(msg, "body");
+    json_object_object_add(body, "seq_msg_index",
                            json_object_new_uint64(m->msg_seq_index));
     m->msg = msg;
     queue_enqueue(channel_state->send_queue, m);
