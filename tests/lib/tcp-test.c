@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../lib/util.h"
 #include "../../lib/tcp.h"
+#include "../../lib/util.h"
 
-void ping_random_peer(json_object* original_msg, const char** peers, size_t num_peers);
+void ping_random_peer(json_object* original_msg, const char** peers,
+                      size_t num_peers);
 void pong(json_object* ping);
 void echo(json_object* echo_request);
 
@@ -30,11 +31,16 @@ int main()
     while ((msg = msg_recv_listener()) != NULL)
     {
         const char* type = msg_type(msg);
-        if (strcmp(type, "echo") == 0) {
+        if (strcmp(type, "echo") == 0)
+        {
             ping_random_peer(msg, peers, num_peers);
-        } else if (strcmp(type, "ping") == 0) {
+        }
+        else if (strcmp(type, "ping") == 0)
+        {
             pong(msg);
-        } else if (strcmp(type, "pong") == 0) {
+        }
+        else if (strcmp(type, "pong") == 0)
+        {
             // Extract the original message
             json_object* body = json_object_object_get(msg, "body");
             json_object* orig = json_object_object_get(body, "original_msg");
@@ -43,18 +49,22 @@ int main()
 
             // Reply to the original client.
             echo(orig);
-        } else {
+        }
+        else
+        {
             fprintf(stderr, "invalid incoming message type: %s\n", type);
             exit(EXIT_FAILURE);
         }
     }
 
-    tcp_free(peers, num_peers);
+    tcp_free();
     json_object_put(init_msg);
 }
 
 // Takes ownership of original_msg. Borrows `peers`.
-void ping_random_peer(json_object* original_msg, const char** peers, size_t num_peers) {
+void ping_random_peer(json_object* original_msg, const char** peers,
+                      size_t num_peers)
+{
     json_object* ping = generic_reply(original_msg);
 
     // Choose a random peer (possibly myself!)
@@ -74,7 +84,8 @@ void ping_random_peer(json_object* original_msg, const char** peers, size_t num_
 }
 
 // Takes ownership of `ping`.
-void pong(json_object* ping) {
+void pong(json_object* ping)
+{
     // Create a "pong" message.
     json_object* pong = generic_reply(ping);
     json_object* pong_body = json_object_object_get(pong, "body");
@@ -83,7 +94,8 @@ void pong(json_object* ping) {
 
     // Clone the payload.
     json_object* ping_body = json_object_object_get(ping, "body");
-    json_object* original_msg = json_object_object_get(ping_body, "original_msg");
+    json_object* original_msg =
+        json_object_object_get(ping_body, "original_msg");
     json_object_get(original_msg);
     json_object_put(ping);
     json_object_object_add(pong_body, "original_msg", original_msg);
