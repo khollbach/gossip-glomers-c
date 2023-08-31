@@ -9,7 +9,7 @@
 
 #define MAX_SEND_QUEUE_SIZE 100
 #define INITIAL_SEND_MSG_SEQ_INDEX 0
-#define INITIAL_RECV_MSG_SEQ_INDEX -1
+#define INITIAL_RECV_MSG_SEQ_INDEX 0
 
 typedef struct ChannelState
 {
@@ -17,7 +17,7 @@ typedef struct ChannelState
     Queue* send_queue;
     uint64_t next_send_msg_seq_index;
     // Receive state
-    uint64_t last_recv_msg_seq_index;
+    uint64_t expected_recv_msg_seq_index;
 } ChannelState;
 
 typedef struct Message
@@ -39,7 +39,7 @@ ChannelState* channel_state_init()
     channel_state->send_queue =
         queue_init(MAX_SEND_QUEUE_SIZE, queue_json_object_free);
     channel_state->next_send_msg_seq_index = INITIAL_SEND_MSG_SEQ_INDEX;
-    channel_state->last_recv_msg_seq_index = INITIAL_RECV_MSG_SEQ_INDEX;
+    channel_state->expected_recv_msg_seq_index = INITIAL_RECV_MSG_SEQ_INDEX;
     return channel_state;
 }
 
@@ -174,7 +174,14 @@ json_object* msg_recv_listener()
         {
             json_object* ack_msg = generate_ACK_msg(m);
             msg_send(ack_msg);
-            return m;
+            uint64_t data_seq_msg_index = json_object_get_uint64(
+                json_object_object_get(body, "seq_msg_index"));
+            if (channel_state->expected_recv_msg_seq_index ==
+                data_seq_msg_index)
+            {
+                channel_state->expected_recv_msg_seq_index++;
+                return m;
+            }
         }
     }
 }
