@@ -33,6 +33,9 @@ $(BUILD_DIR)/challenge-1.o: $(CHALLENGE_1_SRC) $(LIB_DIR)/util.h
 $(BUILD_DIR)/challenge-2.o: $(CHALLENGE_2_SRC) $(LIB_DIR)/util.h $(LIB_DIR)/collections.h $(LIB_DIR)/tcp.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD_DIR)/tcp.o: $(LIB_DIR)/tcp.c $(LIB_DIR)/tcp.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # TODO(kevan): clean this up before committing.
 $(BUILD_DIR)/tcp-test.out: $(BUILD_DIR)/tcp-test.o $(BUILD_DIR)/util.o $(BUILD_DIR)/tcp.o $(BUILD_DIR)/collections.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
@@ -43,11 +46,24 @@ $(BUILD_DIR)/tcp-test.o: tests/lib/tcp-test.c $(LIB_DIR)/util.h $(LIB_DIR)/tcp.h
 $(BUILD_DIR)/util.o: $(LIB_DIR)/util.c $(LIB_DIR)/util.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/collections.o: $(LIB_DIR)/collections.c $(LIB_DIR)/collections.h
+$(BUILD_DIR)/dictionary.o: $(LIB_DIR)/dictionary.c $(LIB_DIR)/dictionary.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/queue.o: $(LIB_DIR)/queue.c $(LIB_DIR)/queue.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/conch.o: $(LIB_DIR)/conch.c $(LIB_DIR)/conch.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/list.o: $(LIB_DIR)/list.c $(LIB_DIR)/list.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/vec_deque.o: $(LIB_DIR)/vec_deque.c $(LIB_DIR)/vec_deque.h
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/collections.o: $(BUILD_DIR)/dictionary.o $(BUILD_DIR)/queue.o $(BUILD_DIR)/conch.o $(BUILD_DIR)/list.o $(BUILD_DIR)/vec_deque.o
+	ld -r $^ -o $@
+
 
 # Tests section
 UNITY_SRC := ../unity/src/unity.c
@@ -63,9 +79,6 @@ $(BUILD_DIR)/vec_deque_tests.out: $(VEC_DEQUE_TEST_OBJS)
 $(BUILD_DIR)/vec_deque_tests.o: $(VEC_DEQUE_TEST_SRC) $(LIB_DIR)/vec_deque.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
-$(BUILD_DIR)/tcp.o: $(LIB_DIR)/tcp.c $(LIB_DIR)/tcp.h
-	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: tests
 tests: $(BUILD_DIR)/vec_deque_tests.out
