@@ -13,7 +13,7 @@ int main()
     json_object* init_msg = msg_recv();
     if (init_msg == NULL)
     {
-        fprintf(stderr, "expected init message, got EOF\n");
+        fprintf(stderr, "Error: expected init message, got EOF\n");
         exit(EXIT_FAILURE);
     }
     msg_send(init_reply(init_msg));

@@ -17,7 +17,7 @@ int main()
     json_object* init_msg = msg_recv();
     if (init_msg == NULL)
     {
-        fprintf(stderr, "expected init message, got EOF\n");
+        fprintf(stderr, "Error: expected init message, got EOF\n");
         exit(EXIT_FAILURE);
     }
 
@@ -52,7 +52,7 @@ int main()
         }
         else
         {
-            fprintf(stderr, "invalid incoming message type: %s\n", type);
+            fprintf(stderr, "Error: invalid incoming message type: %s\n", type);
             exit(EXIT_FAILURE);
         }
     }
