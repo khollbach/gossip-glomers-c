@@ -4,8 +4,8 @@
 #include "util.h"
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_SEND_QUEUE_SIZE 100
 #define INITIAL_SEND_MSG_SEQ_INDEX 0
@@ -49,7 +49,7 @@ void channel_state_free(ChannelState* channel_state)
     free(channel_state);
 }
 
-void channel_state_free_void(void* channel_state)
+void channel_state_free_void(void* channel_state) 
 {
     channel_state_free(channel_state);
 }

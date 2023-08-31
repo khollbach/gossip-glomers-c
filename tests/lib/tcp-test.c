@@ -8,7 +8,7 @@
 #include "../../lib/util.h"
 
 void ping_random_peer(json_object* original_msg, const char** peers,
-                      size_t num_peers, const char* self);
+                      size_t num_peers);
 void pong(json_object* ping);
 void echo(json_object* echo_request);
 
@@ -24,7 +24,7 @@ int main()
     const char** peers = node_ids(init_msg);
     size_t num_peers = node_ids_count(init_msg);
     tcp_init(peers, num_peers);
-    const char* self = node_id(init_msg);
+
     msg_send(generic_reply(init_msg));
 
     json_object* msg;
@@ -33,7 +33,7 @@ int main()
         const char* type = msg_type(msg);
         if (strcmp(type, "echo") == 0)
         {
-            ping_random_peer(msg, peers, num_peers, self);
+            ping_random_peer(msg, peers, num_peers);
         }
         else if (strcmp(type, "ping") == 0)
         {
@@ -61,23 +61,14 @@ int main()
     json_object_put(init_msg);
 }
 
-// Takes ownership of original_msg. Borrows `peers` and `self`.
+// Takes ownership of original_msg. Borrows `peers`.
 void ping_random_peer(json_object* original_msg, const char** peers,
-                      size_t num_peers, const char* self)
+                      size_t num_peers)
 {
     json_object* ping = generic_reply(original_msg);
 
-    // Choose a random peer (not myself)
-    int i;
-    if (num_peers == 1)
-    {
-        fprintf(stderr, "Error: ping_random_peer: only one peer\n");
-        exit(EXIT_FAILURE);
-    }
-    do
-    {
-        i = rand() % num_peers;
-    } while (strcmp(peers[i], self) == 0);
+    // Choose a random peer (possibly myself!)
+    int i = rand() % num_peers;
     json_object* dest = json_object_new_string(peers[i]);
     json_object_object_add(ping, "dest", dest);
 
