@@ -4,8 +4,8 @@
 #include "util.h"
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_SEND_QUEUE_SIZE 100
 #define INITIAL_SEND_MSG_SEQ_INDEX 0
@@ -49,7 +49,7 @@ void channel_state_free(ChannelState* channel_state)
     free(channel_state);
 }
 
-void channel_state_free_void(void* channel_state) 
+void channel_state_free_void(void* channel_state)
 {
     channel_state_free(channel_state);
 }
@@ -153,10 +153,12 @@ json_object* msg_recv_listener()
         json_object* type = json_object_object_get(body, "type");
 
         // Case: Received an ACK
-        if (strcmp(json_object_get_string(type), "ACK") == 0 &&
-            // NOTE: KH is concerned about spurious ACKs when the queue is empty
-            !queue_is_empty(channel_state->send_queue))
+        if (strcmp(json_object_get_string(type), "ACK") == 0)
         {
+            if (queue_is_empty(channel_state->send_queue))
+            {
+                continue;
+            }
             uint64_t ack_seq_msg_index = json_object_get_uint64(
                 json_object_object_get(body, "seq_msg_index"));
             uint64_t head_seq_msg_index =
