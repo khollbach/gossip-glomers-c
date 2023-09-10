@@ -1,23 +1,26 @@
 #include "tcp.h"
 #include "collections.h"
 #include "json-c/json_object.h"
+#include "stopwatch.h"
 #include "util.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MAX_SEND_QUEUE_SIZE 100
 #define INITIAL_SEND_MSG_SEQ_INDEX 0
 #define INITIAL_RECV_MSG_SEQ_INDEX 0
-
-// FIX: Duplicate data messages being sent from node to itself
+#define MSG_SEND_TIMEOUT_MS 1000
 
 typedef struct ChannelState
 {
     // Send state
     Queue* send_queue;
     uint64_t next_send_msg_seq_index;
+    struct timespec last_head_sent;
+
     // Receive state
     uint64_t expected_recv_msg_seq_index;
 } ChannelState;
@@ -42,6 +45,8 @@ ChannelState* channel_state_init()
         queue_init(MAX_SEND_QUEUE_SIZE, queue_json_object_free);
     channel_state->next_send_msg_seq_index = INITIAL_SEND_MSG_SEQ_INDEX;
     channel_state->expected_recv_msg_seq_index = INITIAL_RECV_MSG_SEQ_INDEX;
+    channel_state->last_head_sent.tv_sec = 0;
+    channel_state->last_head_sent.tv_nsec = 0;
     return channel_state;
 }
 
@@ -122,9 +127,18 @@ json_object* msg_recv_listener()
                 dictionary_get(CHANNEL_STATES, PEERS[i]);
             if (!queue_is_empty(channel_state->send_queue))
             {
-                Message* m = queue_peek(channel_state->send_queue);
-                json_object_get(m->msg);
-                msg_send(m->msg);
+                struct timespec now;
+                clock_gettime(CLOCK_MONOTONIC, &now);
+                long long delta_ms =
+                    timespec_diff_ms(&channel_state->last_head_sent, &now);
+                if (delta_ms > MSG_SEND_TIMEOUT_MS)
+                {
+                    Message* m = queue_peek(channel_state->send_queue);
+                    json_object_get(m->msg);
+                    msg_send(m->msg);
+                    clock_gettime(CLOCK_MONOTONIC,
+                                  &channel_state->last_head_sent);
+                }
             }
         }
 
@@ -135,7 +149,8 @@ json_object* msg_recv_listener()
         }
 
         // Client messages; no need to ACK these.
-        const char* src = json_object_get_string(json_object_object_get(m, "src"));
+        const char* src =
+            json_object_get_string(json_object_object_get(m, "src"));
         if (!dictionary_contains(CHANNEL_STATES, src))
         {
             return m;
@@ -159,6 +174,8 @@ json_object* msg_recv_listener()
             if (head_seq_msg_index == ack_seq_msg_index)
             {
                 free(queue_dequeue(channel_state->send_queue));
+                channel_state->last_head_sent.tv_sec = 0;
+                channel_state->last_head_sent.tv_nsec = 0;
             }
         }
         // Case: Received a data message

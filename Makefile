@@ -23,7 +23,7 @@ all: $(CHALLENGE_EXECS)
 $(BUILD_DIR)/challenge-1.out: $(CHALLENGE_1_OBJS) $(BUILD_DIR)/util.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
-$(BUILD_DIR)/challenge-2.out: $(CHALLENGE_2_OBJS) $(BUILD_DIR)/util.o $(BUILD_DIR)/collections.o $(BUILD_DIR)/tcp.o
+$(BUILD_DIR)/challenge-2.out: $(CHALLENGE_2_OBJS) $(BUILD_DIR)/util.o $(BUILD_DIR)/collections.o $(BUILD_DIR)/tcp.o $(BUILD_DIR)/stopwatch.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 $(BUILD_DIR)/challenge-1.o: $(CHALLENGE_1_SRC) $(LIB_DIR)/util.h
@@ -33,7 +33,7 @@ $(BUILD_DIR)/challenge-2.o: $(CHALLENGE_2_SRC) $(LIB_DIR)/util.h $(LIB_DIR)/coll
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # TODO(kevan): clean this up before committing.
-$(BUILD_DIR)/tcp-test.out: $(BUILD_DIR)/tcp-test.o $(BUILD_DIR)/util.o $(BUILD_DIR)/tcp.o $(BUILD_DIR)/collections.o
+$(BUILD_DIR)/tcp-test.out: $(BUILD_DIR)/tcp-test.o $(BUILD_DIR)/util.o $(BUILD_DIR)/tcp.o $(BUILD_DIR)/collections.o $(BUILD_DIR)/stopwatch.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 $(BUILD_DIR)/tcp-test.o: tests/lib/tcp-test.c $(LIB_DIR)/util.h $(LIB_DIR)/tcp.h
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -45,7 +45,10 @@ $(BUILD_DIR)/util.o: $(LIB_DIR)/util.c $(LIB_DIR)/util.h
 $(BUILD_DIR)/collections.o: $(LIB_DIR)/collections.c $(LIB_DIR)/collections.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/tcp.o: $(LIB_DIR)/tcp.c $(LIB_DIR)/tcp.h
+$(BUILD_DIR)/tcp.o: $(LIB_DIR)/tcp.c $(LIB_DIR)/tcp.h $(LIB_DIR)/stopwatch.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/stopwatch.o: $(LIB_DIR)/stopwatch.c $(LIB_DIR)/stopwatch.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: build
