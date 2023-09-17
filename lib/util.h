@@ -3,6 +3,12 @@
 #include <json-c/json.h>
 #include <stdint.h>
 
+typedef enum INPUT_READ_RESULTS : long long
+{
+    INPUT_READ_TIMEDOUT = -1LL,
+    INPUT_READ_EOF = -2LL,
+} INPUT_READ_RESULTS;
+
 // "Takes ownership" of the input object (this function will call `put`).
 void msg_send(json_object* msg);
 

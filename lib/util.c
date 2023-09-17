@@ -1,11 +1,13 @@
 #include "util.h"
 #include "json-c/json_object.h"
+#include "stopwatch.h"
 
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void msg_send(json_object* msg)
 {
@@ -21,50 +23,47 @@ void msg_send(json_object* msg)
     json_object_put(msg);
 }
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/select.h>
-#include <stdio.h>
-#include <unistd.h>
-
-ssize_t getline_with_timeout(
-    char** input_line,
-    size_t* input_len,
-    struct timeval timeout,
-) {
+long long getline_with_timeout(char** input_line, size_t* input_len,
+                               struct timeval timeout)
+{
     fd_set set;
-    FD_ZERO(&set); /* clear the set */
+    FD_ZERO(&set);              /* clear the set */
     FD_SET(STDIN_FILENO, &set); /* add our file descriptor to the set */
     int buffer_state;
 
     buffer_state = select(1, &set, NULL, NULL, &timeout);
 
-
-    if(buffer_state == -1) {
-        fprintf(stderr, "Error: select in getline_with_timeout failed\n");
+    if (buffer_state == -1)
+    {
+        perror("select");
         exit(EXIT_FAILURE);
-    } else if(buffer_state == 0) {
-        return -1;
-    } else {
+    }
+    else if (buffer_state == 0)
+    {
+        return INPUT_READ_TIMEDOUT;
+    }
+    else
+    {
         errno = 0;
-        ssize_t input_read = getline(input_line, input_len, stdin);
-        if (input_read == -1)
+        ssize_t input_bytes_read = getline(input_line, input_len, stdin);
+        if (input_bytes_read == -1)
         {
-            // End of stdin; return NULL.
+            // End of STDIN
             if (errno == 0)
             {
                 free(input_line);
-                return NULL;
+                return INPUT_READ_EOF;
             }
 
-            // IO error.
+            // IO error
             perror("getline");
             free(input_line);
             exit(EXIT_FAILURE);
         }
-
+        else
+        {
+            return (long long)input_bytes_read;
+        }
     }
 }
 
@@ -72,19 +71,34 @@ json_object* msg_recv()
 {
     char* input_line = NULL;
     size_t input_len = 0;
+    // HACK: Using a default timeout; parameterizing msg_recv is a TODO.
+    struct timeval timeout = DEFAULT_TIMEOUT_TIMEVAL;
 
-    errno = 0;
-    ssize_t input_bytes_read = getline_with_timeout(&input_line, &input_len);
-    json_object* msg = json_tokener_parse(input_line);
-    if (msg == NULL)
+    long long input_bytes_read =
+        getline_with_timeout(&input_line, &input_len, timeout);
+    if (input_bytes_read == INPUT_READ_EOF)
     {
-        fprintf(stderr, "Error: recv_msg: couldn't parse line as json\n");
-        free(input_line);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
+    // TODO: What to do if we get a timeout?
+    else if (input_bytes_read == INPUT_READ_TIMEDOUT)
+    {
+        // BUG: We have two different semantics for NULL pointer!
+        return NULL;
+    }
+    else
+    {
+        json_object* msg = json_tokener_parse(input_line);
+        if (msg == NULL)
+        {
+            fprintf(stderr, "Error: msg_recv: couldn't parse line as json\n");
+            free(input_line);
+            exit(EXIT_FAILURE);
+        }
 
-    free(input_line);
-    return msg;
+        free(input_line);
+        return msg;
+    }
 }
 
 json_object* generic_reply(json_object* msg)
