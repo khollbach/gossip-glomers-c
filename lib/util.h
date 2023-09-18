@@ -3,11 +3,26 @@
 #include <json-c/json.h>
 #include <stdint.h>
 
-typedef enum INPUT_READ_RESULTS : long long
+typedef enum INPUT_READ_RESULTS
 {
-    INPUT_READ_TIMEDOUT = -1LL,
-    INPUT_READ_EOF = -2LL,
+    INPUT_READ_SUCCESS = 0,
+    INPUT_READ_TIMEDOUT = -1,
+    INPUT_READ_EOF = 2,
 } INPUT_READ_RESULTS;
+
+typedef struct msg_recv_result
+{
+    INPUT_READ_RESULTS result;
+    json_object* msg;
+} msg_recv_result_t;
+
+// Input line is owned if successful result is returned.
+typedef struct getline_result
+{
+    INPUT_READ_RESULTS result;
+    char* line;
+    size_t line_len;
+} getline_result_t;
 
 // "Takes ownership" of the input object (this function will call `put`).
 void msg_send(json_object* msg);
@@ -15,6 +30,10 @@ void msg_send(json_object* msg);
 // Returns an "owned" object (the caller must eventually call `put`).
 // Returns NULL if there are no more messages.
 json_object* msg_recv();
+
+// Returns an "owned" object (the caller must eventually call `put`), when
+// result is INPUT_READ_SUCCESS.
+msg_recv_result_t msg_recv_with_timeout(struct timeval* timeout);
 
 // Returns an "owned" object (the caller must eventually call `put`).
 // Merely "borrows" the input object -- ownership stays with the caller.
