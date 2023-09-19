@@ -82,8 +82,6 @@ void tcp_free(void)
     }
     for (size_t i = 0; i < NUM_PEERS; i++)
     {
-        ChannelState* channel_state = dictionary_get(CHANNEL_STATES, PEERS[i]);
-        queue_free(channel_state->send_queue);
         free(PEERS[i]);
     }
     free(PEERS);
