@@ -28,11 +28,13 @@ int main(void)
         exit(EXIT_FAILURE);
     }
     bool is_leader = strcmp(node_id(init_msg), LEADER_NODE) == 0;
+
     const char** peers = node_ids(init_msg);
     const size_t num_peers = node_ids_count(init_msg);
     tcp_init(peers, num_peers);
     msg_send(generic_reply(init_msg));
     json_object_put(init_msg);
+
     if (is_leader)
     {
         leader_event_loop();
@@ -48,7 +50,7 @@ int main(void)
 void follower_event_loop()
 {
     json_object* msg;
-    while ((msg = msg_recv()) != NULL)
+    while ((msg = msg_recv_listener()) != NULL)
     {
         const char* type = msg_type(msg);
 
@@ -74,7 +76,7 @@ void follower_event_loop()
 
 void leader_event_loop()
 {
-    Queue* conch_request_queue = queue_init(5, queue_json_object_free);
+    Queue* conch_request_queue = queue_init(5000, queue_json_object_free);
     Conch* conch = conch_init(0);
 
     json_object* msg;
@@ -87,7 +89,7 @@ void leader_event_loop()
             continue;
         }
 
-        if ((msg = msg_recv()) == NULL)
+        if ((msg = msg_recv_listener()) == NULL)
         {
             // If the conch is still loaned out, we'll never get it back, since
             // there are no more incoming messages.
@@ -197,7 +199,7 @@ void conch_response_dispatcher(Conch* conch, Queue* request_queue)
     json_object_object_add(conch_response, "body", body);
 
     // Send conch response message (to Follower)
-    msg_send(conch_response);
+    msg_send_pusher(conch_response);
 }
 
 // Used exclusively by Leader
@@ -235,7 +237,7 @@ void client_request_handler(json_object* client_request)
     json_object_object_add(conch_request, "body", body);
 
     // Send conch request message (to Leader)
-    msg_send(conch_request);
+    msg_send_pusher(conch_request);
 
     // Clean up: free client request message
     json_object_put(client_request);
@@ -280,7 +282,7 @@ void conch_response_handler(json_object* conch_response)
     json_object_object_add(conch_release, "body", conch_release_body);
 
     // Send conch release message (to Leader)
-    msg_send(conch_release);
+    msg_send_pusher(conch_release);
 
     // Clean up: free conch response message
     json_object_put(conch_response);

@@ -12,7 +12,7 @@
 #define MAX_SEND_QUEUE_SIZE 100
 #define INITIAL_SEND_MSG_SEQ_INDEX 0
 #define INITIAL_RECV_MSG_SEQ_INDEX 0
-#define MSG_SEND_TIMEOUT_MS 1000
+#define MSG_SEND_TIMEOUT_MS 100
 
 typedef struct ChannelState
 {
