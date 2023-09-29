@@ -405,8 +405,8 @@ void dictionary_set(Dictionary* dictionary, const char* key, void* value)
     // Key already exists, just replace value (no need to free the key)
     else
     {
-        // FIX: Leaked underlying queue in the ChannelState value
-        dictionary->elem_free(dictionary->key_value_pairs[lookup_result.index].value);
+        dictionary->elem_free(
+            dictionary->key_value_pairs[lookup_result.index].value);
         dictionary->key_value_pairs[lookup_result.index].value = value;
         return;
     }

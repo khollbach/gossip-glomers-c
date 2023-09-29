@@ -140,7 +140,6 @@ json_object* msg_recv_listener()
             }
         }
 
-        // TODO: Handle multiple cases (including timeouts) here
         json_object* m = msg_recv();
         if (m == NULL)
         {
